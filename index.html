@@ -2,18 +2,51 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Retro Ray-Trace Sandbox (VR Overhaul)</title>
+    <title>Retro Ray-Trace Sandbox</title>
     <style>
-        body { margin: 0; padding: 0; overflow: hidden; background-color: #008080; font-family: 'MS Sans Serif', Tahoma, sans-serif; font-size: 11px; color: #000; }
-        #glcanvas { display: block; width: 100vw; height: 100vh; image-rendering: pixelated; touch-action: none; }
-        .window { position: absolute; background: #c0c0c0; border-top: 2px solid #dfdfdf; border-left: 2px solid #dfdfdf; border-right: 2px solid #000; border-bottom: 2px solid #000; padding: 2px; box-shadow: 2px 2px 0px rgba(0,0,0,0.5); display: flex; flex-direction: column; max-height: 95vh; overflow-y: auto; overflow-x: hidden; pointer-events: auto; }
-        .title-bar { background: #000080; color: #fff; padding: 2px 4px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
+        body {
+            margin: 0; padding: 0; overflow: hidden;
+            background-color: #008080;
+            font-family: 'MS Sans Serif', Tahoma, sans-serif;
+            font-size: 11px;
+            color: #000;
+        }
+        #glcanvas {
+            display: block; width: 100vw; height: 100vh;
+            image-rendering: pixelated;
+        }
+        .window {
+            position: absolute; background: #c0c0c0;
+            border-top: 2px solid #dfdfdf; border-left: 2px solid #dfdfdf;
+            border-right: 2px solid #000; border-bottom: 2px solid #000;
+            padding: 2px; box-shadow: 2px 2px 0px rgba(0,0,0,0.5);
+            display: flex; flex-direction: column;
+            max-height: 95vh; overflow-y: auto; overflow-x: hidden;
+        }
+        .title-bar {
+            background: #000080; color: #fff;
+            padding: 2px 4px; font-weight: bold;
+            display: flex; justify-content: space-between; align-items: center;
+        }
         .content { padding: 8px; }
         .panel-group { border: 2px groove #fff; padding: 6px; margin-bottom: 6px; }
         .panel-group legend { padding: 0 4px; }
-        button, select, input[type="color"] { background: #c0c0c0; border-top: 2px solid #fff; border-left: 2px solid #fff; border-right: 2px solid #808080; border-bottom: 2px solid #808080; padding: 2px 4px; margin: 2px 0; font-family: 'MS Sans Serif', Tahoma, sans-serif; font-size: 11px; cursor: pointer; width: 100%; box-sizing: border-box; }
-        button:active { border-top: 2px solid #808080; border-left: 2px solid #808080; border-right: 2px solid #fff; border-bottom: 2px solid #fff; }
-        .close-btn { width: 16px; height: 14px; font-size: 9px; line-height: 10px; padding: 0; margin: 0; font-weight: bold; text-align: center; }
+        button, select, input[type="color"], input[type="file"] {
+            background: #c0c0c0;
+            border-top: 2px solid #fff; border-left: 2px solid #fff;
+            border-right: 2px solid #808080; border-bottom: 2px solid #808080;
+            padding: 2px 4px; margin: 2px 0;
+            font-family: 'MS Sans Serif', Tahoma, sans-serif; font-size: 11px;
+            cursor: pointer; width: 100%; box-sizing: border-box;
+        }
+        button:active {
+            border-top: 2px solid #808080; border-left: 2px solid #808080;
+            border-right: 2px solid #fff; border-bottom: 2px solid #fff;
+        }
+        .close-btn {
+            width: 16px; height: 14px; font-size: 9px; line-height: 10px;
+            padding: 0; margin: 0; font-weight: bold; text-align: center;
+        }
         label { display: flex; justify-content: space-between; align-items: center; margin: 2px 0; }
         input[type="range"] { width: 90px; vertical-align: middle; }
         
@@ -21,8 +54,35 @@
         #ui-right { top: 10px; right: 10px; width: 230px; }
         #ui-cam { top: 10px; left: 250px; width: 230px; }
         
-        #crosshair { position: absolute; top: 50%; left: 50%; width: 4px; height: 4px; background: white; transform: translate(-50%, -50%); mix-blend-mode: difference; pointer-events: none; }
-        #error-screen { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #0000aa; color: #fff; font-family: monospace; font-size: 16px; padding: 40px; box-sizing: border-box; z-index: 9999; }
+        #crosshair {
+            position: absolute; top: 50%; left: 50%;
+            width: 4px; height: 4px; background: white;
+            transform: translate(-50%, -50%);
+            mix-blend-mode: difference; pointer-events: none;
+        }
+        #error-screen {
+            display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: #0000aa; color: #fff; font-family: monospace; font-size: 16px;
+            padding: 40px; box-sizing: border-box; z-index: 9999;
+        }
+        #render-overlay {
+            display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); color: #0f0; font-family: monospace; font-size: 24px;
+            flex-direction: column; justify-content: center; align-items: center; z-index: 9000;
+        }
+        .progress-bar { width: 400px; height: 20px; border: 2px solid #0f0; margin-top: 20px; }
+        .progress-fill { width: 0%; height: 100%; background: #0f0; }
+    
+        #vr-hud { display:none; position:fixed; inset:0; pointer-events:none; z-index:9500; color:#fff; font-family:monospace; text-shadow:2px 2px #000; }
+        #vr-hud .vr-card { position:absolute; background:rgba(0,0,0,.62); border:1px solid #0ff; padding:6px; min-width:150px; pointer-events:none; }
+        #vr-left-hud { left:3%; bottom:7%; } #vr-right-hud { right:3%; bottom:7%; text-align:right; }
+        #vr-center-hud { left:50%; top:4%; transform:translateX(-50%); text-align:center; min-width:240px; }
+        .vr-active { outline:2px solid #0ff; }
+        #vr-settings { background:#d0d0d0; }
+        #transform-gizmo { position:absolute; display:none; pointer-events:none; z-index:200; width:120px; height:120px; transform:translate(-50%,-50%); }
+        #transform-gizmo .gizmo-axis { position:absolute; left:58px; top:58px; width:55px; height:3px; transform-origin:0 50%; background:#fff; box-shadow:0 0 2px #000; }
+        #transform-gizmo .gizmo-x { transform:rotate(0deg); background:#f44; } #transform-gizmo .gizmo-y { transform:rotate(-90deg); background:#4f4; } #transform-gizmo .gizmo-z { transform:rotate(145deg); background:#48f; }
+        #transform-gizmo .gizmo-label { position:absolute; left:32px; top:66px; font:9px monospace; color:#fff; text-shadow:1px 1px #000; }
     </style>
 </head>
 <body>
@@ -30,59 +90,148 @@
 <canvas id="glcanvas"></canvas>
 <div id="crosshair"></div>
 
-<div class="window" id="modal-vr" style="display:none; top:20%; left:35%; width:320px; z-index:10000;">
-    <div class="title-bar"><span>Experimental VR Settings</span><button class="close-btn" onclick="app.closeModal('modal-vr')">X</button></div>
+<div class="window" id="modal-changelog" style="display:none; top:20%; left:35%; width:320px; z-index:10000;">
+    <div class="title-bar">
+        <span>Changelog</span>
+        <button class="close-btn" onclick="app.closeModal('modal-changelog')">X</button>
+    </div>
     <div class="content" style="background:#fff; height:180px; border:2px inset #dfdfdf; overflow-y:auto; padding:6px;">
-        <label>Use Thumbsticks (Fly): <input type="checkbox" id="vr-thumbsticks"></label>
-        <label>World Scale: <input type="range" id="vr-scale" min="0.1" max="5.0" step="0.1" value="1.0"></label>
-        <div style="font-size: 10px; margin-top: 10px; color: #555;">VR Controls:<br>- Grip: Grab & Rotate Object<br>- Trigger: Grab Air & Pull<br>- Press A + X: Exit VR</div>
-        <button onclick="app.exitVR()" style="margin-top: 10px; font-weight: bold;">Exit VR Session</button>
+        <p><strong>Changelog:</strong></p>
+        <p><strong>Version 1.2</strong></p>
+        <p>Added volumetric lighting</p>
+        <p>It REALLY takes a long time to render, so i recommend keeping it off if you don't want to wait 2 years to render 2 or 3 cubes</p>
+        <p>Added the Changelog and Info section, you can now view the project history and learn about Ray Tracing itself.</p>
+        <p>Added a frame limit remover, but since the Ray Tracing in this demo is tied to the frame rate, unlimited will be INCREDIBLY slow by freezing your browser but when the RT settles you can finally render.</p>
+        <p>Removed Herobrine</p>
+    </div>
+</div>
+
+<div class="window" id="modal-info" style="display:none; top:20%; left:35%; width:340px; z-index:10000;">
+    <div class="title-bar">
+        <span>Project & Ray Tracing Info</span>
+        <button class="close-btn" onclick="app.closeModal('modal-info')">X</button>
+    </div>
+    <div class="content" style="background:#fff; height:180px; border:2px inset #dfdfdf; overflow-y:auto; padding:6px;">
+        <p><strong>About Project:</strong></p>
+        <p>This project started as more of a proof of concept, probably was more of a joke since i literally wrote an essay on the first or second day back to school about this, being "Ray Tracing VS Rasterization", Since then, I have learnt a lot about Ray Tracing itself after making it myself in HTML and JS. 
+        <p>I had 3 different recodes for this, the first time i did it, it turned out nicely, but the camera ended up breaking and when I tried to implement ambient occlusion itself, the renderer shat itself, i really don't know why but i guess thats what life is, second time it did end up really good, and i used features from that one to implement into here, like the Volumetric Lighting that i didn't get to implement, it looked a lot like 90s CGI so i scrapped it, and you are here at the third recode, with all the features from the older versions.</p>
+        <p>if you want to reach me via email for questions or feedback, send it to brandonsteeledev@outlook.com</p>
+        <p>I don't code much these days, well, sorta, every once in a while I pick up SourcePawn and make another plugin for my friends Source Engine game servers, love ya shotto, keep doing what ur doing.</p>
+        <p>sushi was here, being the chud he is</p>
+        <p>Who's Joe? - J.M.</p>
+        <hr>
+        <p><strong>About Ray Tracing:</strong></p>
+        <p>Ray tracing is a rendering technique that simulates the behavior of light in a 3D scene by tracing the path of light rays as they interact with objects. This approach allows for realistic lighting effects, including shadows, reflections, and refractions, this demo shows off how it can work in a browser and is optimized HEAVILY for a gtx 1070 and is made for browsers and lower-end hardware for benchmarking, and fun</p>
     </div>
 </div>
 
 <div class="window" id="ui-left">
     <div class="title-bar"><span>Tools & Spawner</span></div>
     <div class="content">
-        <fieldset class="panel-group" style="background:#ffe0e0; border-color:#a00;">
-            <legend style="font-weight:bold; color:#a00;">Virtual Reality</legend>
-            <button id="btn-vr" onclick="app.enterVR()" style="font-weight:bold; height:32px;">Enter Experimental VR Mode</button>
-            <div style="font-size: 9px; text-align: center; margin-top: 2px;">Requires a connected HMD</div>
-            <button onclick="app.openModal('modal-vr')" style="margin-top: 4px;">VR Settings</button>
+        <fieldset class="panel-group">
+            <legend>Documentation</legend>
+            <div style="display:flex; gap:2px;">
+                <button onclick="app.openModal('modal-changelog')">Changelog</button>
+                <button onclick="app.openModal('modal-info')">Project Info</button>
+            </div>
         </fieldset>
+        <fieldset class="panel-group" style="background:#dff;">
+            <legend>Virtual Reality</legend>
+            <button onclick="app.enterVR()" id="btn-enter-vr" style="font-weight:bold;">Enter VR mode</button>
+            <div id="vr-status" style="font-size:9px;">WebXR: checking...</div>
+        </fieldset>
+
         <fieldset class="panel-group">
             <legend>Spawn Shape</legend>
-            <div style="display:flex; gap:2px;"><button onclick="app.spawnObject(0)">Cube</button><button onclick="app.spawnObject(1)">Sphere</button></div>
+            <div style="display:flex; gap:2px;">
+                <button onclick="app.spawnObject(0)">Cube</button>
+                <button onclick="app.spawnObject(1)">Sphere</button>
+            </div>
             <button onclick="app.clearScene()" style="color:red">Clear All</button>
         </fieldset>
+
         <fieldset class="panel-group">
-            <legend>Transform Object (Gizmos)</legend>
-            <label>Rot X: <input type="range" id="obj-rot-x" min="0" max="360" step="1" oninput="app.updateSelected()"></label>
-            <label>Rot Y: <input type="range" id="obj-rot-y" min="0" max="360" step="1" oninput="app.updateSelected()"></label>
-            <label>Rot Z: <input type="range" id="obj-rot-z" min="0" max="360" step="1" oninput="app.updateSelected()"></label>
+            <legend>Selection (Arrow Keys)</legend>
+            <div style="display:flex; gap:2px;">
+                <button onclick="app.selectPrev()">Prev</button>
+                <button onclick="app.selectNext()">Next</button>
+            </div>
+            <button id="btn-outlines" onclick="app.toggleOutlines()" style="margin-top:4px; font-weight:bold;">Selection Outlines: OFF</button>
+            <div id="sel-info" style="margin-top:4px; font-weight:bold;">Selected: None</div>
         </fieldset>
+
+        <fieldset class="panel-group">
+            <legend>Transform Object</legend>
+            <label>Pos X: <input type="range" id="obj-pos-x" min="-10" max="10" step="0.1" oninput="app.updateSelected()"></label>
+            <label>Pos Y: <input type="range" id="obj-pos-y" min="0" max="10" step="0.1" oninput="app.updateSelected()"></label>
+            <label>Pos Z: <input type="range" id="obj-pos-z" min="-10" max="10" step="0.1" oninput="app.updateSelected()"></label>
+            <label>Scale: <input type="range" id="obj-scale" min="0.1" max="5" step="0.1" oninput="app.updateSelected()"></label>
+        </fieldset>
+
         <fieldset class="panel-group">
             <legend>Material & Textures</legend>
-            <label>Mat: <select id="mat-type" onchange="app.updateSelected()"><option value="0">Matte</option><option value="1">Mirror</option><option value="2">Glass</option><option value="3">Emissive</option></select></label>
+            <label>Mat: <select id="mat-type" onchange="app.updateSelected()">
+                <option value="0">Plastic / Matte</option>
+                <option value="1">Chrome / Mirror</option>
+                <option value="2">Glass</option>
+                <option value="3">Neon / Emissive</option>
+            </select></label>
             <label>Color: <input type="color" id="mat-color" onchange="app.updateSelected()"></label>
             <label>Rough/Emit: <input type="range" id="mat-re" min="0" max="1" step="0.01" oninput="app.updateSelected()"></label>
+            
+            <div style="display:flex; gap:2px; margin-top:4px;">
+                <button onclick="app.duplicateSelected()">Duplicate</button>
+                <button onclick="app.deleteSelected()">Delete</button>
+            </div>
         </fieldset>
     </div>
 </div>
 
 <div class="window" id="ui-cam">
-    <div class="title-bar"><span>Cameras & View</span></div>
+    <div class="title-bar"><span>Cameras & Export</span></div>
     <div class="content">
-        <fieldset class="panel-group">
-            <legend>PC View Output</legend>
-            <label>Spectator: <select id="spectator-mode">
-                <option value="0">Normal Camera</option>
-                <option value="1">VR Headset (Left Eye)</option>
-            </select></label>
-            <div style="font-size:9px; color:#555; margin-top:4px;">Switches the PC screen view while VR is active.</div>
-        </fieldset>
         <fieldset class="panel-group">
             <legend>Normal Camera Settings</legend>
             <label>FOV: <input type="range" id="n-cam-fov" min="30" max="120" value="90" oninput="app.updateCameras()"></label>
+            <label>Visible in RT: <input type="checkbox" id="n-cam-vis" checked onchange="app.updateCameras()"></label>
+            <label>Body Color: <input type="color" id="n-cam-color" value="#222222" onchange="app.updateCameras()"></label>
+        </fieldset>
+
+        <fieldset class="panel-group">
+            <legend>Render Camera Settings</legend>
+            <div style="display:flex; gap:2px;">
+                <button onclick="app.spawnRenderCamera()" style="font-weight:bold;">Spawn Camera</button>
+                <button onclick="app.relocateRenderCamera()">Relocate</button>
+            </div>
+            <div id="render-cam-settings" style="display:none; margin-top:4px; border-top:1px dashed #8080; padding-top:4px;">
+                <label>FOV: <input type="range" id="r-cam-fov" min="30" max="120" value="90" oninput="app.updateCameras()"></label>
+                <label>Visible in RT: <input type="checkbox" id="r-cam-vis" checked onchange="app.updateCameras()"></label>
+                <label>Body Color: <input type="color" id="r-cam-color" value="#0000ff" onchange="app.updateCameras()"></label>
+            </div>
+        </fieldset>
+
+        <fieldset class="panel-group" style="background:#e0ffe0; border-color:#0a0;">
+            <legend style="font-weight:bold; color:#060;">Render Export</legend>
+            <label>Quality: <select id="render-samples">
+                <option value="100">Low (100 Samples)</option>
+                <option value="500">Medium (500 Samples)</option>
+                <option value="1500" selected>High (1500 Samples)</option>
+                <option value="5000">Ultra (5000 Samples)</option>
+                <option value="10000">Ultra+ (10k Samples)</option>
+                <option value="50000">Ultra++ (50k Samples)</option>
+                <option value="100000">Paper Bag (100k Samples</option>
+            </select></label>
+            <label>Res: <select id="render-res">
+                <option value="1920x1080">1080p</option>
+                <option value="3840x2160" selected>4K (3840x2160)</option>
+                <option value="7680x4320">8K (7680x4320)</option>
+            </select></label>
+            <label>Format: <select id="render-format">
+                <option value="png">PNG</option>
+                <option value="jpg">JPG</option>
+                <option value="bmp">BMP</option>
+            </select></label>
+            <button onclick="app.startFinalRender()" style="background:#0a0; color:#fff; font-size:12px; font-weight:bold; height:24px;">RENDER!</button>
         </fieldset>
     </div>
 </div>
@@ -93,136 +242,273 @@
         <fieldset class="panel-group">
             <legend>Performance</legend>
             <div>FPS: <span id="fps-counter">60</span></div>
+            <div>Frame: <span id="ms-counter">16</span> ms</div>
             <div>Accum: <span id="accum-counter">0</span></div>
+            <div>Objects: <span id="obj-counter">0</span>/64</div>
+            <label style="margin-top:6px;">FPS Limit: 
+                <select id="fps-limit" onchange="app.updateFpsLimit()">
+                    <option value="30">30 FPS</option>
+                    <option value="60" selected>60 FPS</option>
+                    <option value="120">120 FPS</option>
+                    <option value="144">144 FPS</option>
+                    <option value="240">240 FPS</option>
+                    <option value="0">Unlimited</option>
+                </select>
+            </label>
+            <div style="font-size: 9px; color: #333; margin-top: 4px; line-height: 1.15; border-top: 1px dotted #808080; padding-top: 4px;">
+                You must disable your browsers FPS limit and GPU vsync in your Browser shortcut launch options, or as it's called in windows: target, otherwise you'll have no difference, and i do NOT recommend turning it on Unlimited, because it will freeze your browser for a while until the Ray Tracing settles, atleast rendering is faster 🤷‍♂️
+            </div>
         </fieldset>
+
+        <fieldset class="panel-group" id="vr-settings">
+            <legend>VR / Editor Extras</legend>
+            <label>VR player in RT: <input type="checkbox" id="vr-avatar-vis" checked onchange="app.updateVRSettings()"></label>
+            <label>Spectator camera in RT: <input type="checkbox" id="vr-spec-vis" checked onchange="app.updateVRSettings()"></label>
+            <label>3D gizmos: <input type="checkbox" id="vr-gizmos-vis" checked onchange="app.updateVRSettings()"></label>
+            <label>Snap: <select id="vr-snap" onchange="app.updateVRSettings()">
+                <option value="off">Off</option><option value="0.25">0.25 m / 15°</option>
+                <option value="0.5" selected>0.5 m / 30°</option><option value="1">1 m / 45°</option>
+            </select></label>
+            <label>Non-uniform scale: <input type="checkbox" id="vr-nonuniform" checked onchange="app.updateVRSettings()"></label>
+            <label>Spectator FOV: <input type="range" id="vr-spec-fov" min="40" max="120" value="90" oninput="app.updateVRSettings()"></label>
+        </fieldset>
+
         <fieldset class="panel-group">
             <legend>Graphics & Environment</legend>
+            <label>Res Scale: <select id="res-scale" onchange="app.resize()">
+                <option value="0.25">25% (Potato)</option>
+                <option value="0.5">50% (Fast)</option>
+                <option value="0.75" selected>75% (Balanced)</option>
+                <option value="1.0">100% (Native/High)</option>
+                <option value="1.5">150% (Higher)</option>
+                <option value="2.0">200% (Ultra)</option>
+                <option value="5.0">500% (Ultra+)</option>
+                <option value="10.0">1000% (Ultra++)</option>
+            </select></label>
             <label>Bounces: <input type="range" id="bounces" min="1" max="5" value="3" oninput="app.resetAccum()"></label>
             <label>Time: <input type="range" id="time-day" min="0" max="24" step="0.1" value="14" oninput="app.updateEnv()"></label>
+            <label>Sun Color: <input type="color" id="sun-color" value="#fffaea" onchange="app.updateEnv()"></label>
+            <label>Fog Density: <input type="range" id="fog-density" min="0" max="0.08" step="0.002" value="0.02" oninput="app.updateFog()"></label>
             <label>Floor: <input type="color" id="floor-color" value="#808080" onchange="app.updateEnv()"></label>
         </fieldset>
     </div>
 </div>
 
-<div id="error-screen">FATAL ERROR<br><br>WebGL 2.0 or EXT_color_buffer_float is unsupported.</div>
+<div id="transform-gizmo">
+    <div class="gizmo-axis gizmo-x"></div><div class="gizmo-axis gizmo-y"></div><div class="gizmo-axis gizmo-z"></div>
+    <div class="gizmo-label">SELECTED</div>
+</div>
+<div id="vr-hud">
+    <div id="vr-center-hud" class="vr-card">VR READY</div>
+    <div id="vr-left-hud" class="vr-card">LEFT HAND<br><span id="vr-left-info">Grip: free</span></div>
+    <div id="vr-right-hud" class="vr-card">RIGHT HAND<br><span id="vr-right-info">Grip: free</span></div>
+</div>
+
+<div id="render-overlay">
+    <div>RENDERING SCENE...</div>
+    <div id="render-status">Sample 0 / 1500</div>
+    <div class="progress-bar"><div class="progress-fill" id="render-fill"></div></div>
+    <div id="render-eta" style="margin-top:10px; font-size:16px;">ETA: Calculating...</div>
+</div>
+
+<div id="error-screen">
+    FATAL ERROR<br><br>
+    WebGL 2.0 or EXT_color_buffer_float is unsupported by your graphics context.
+</div>
 
 <script type="x-shader/x-vertex" id="vs-quad">
     #version 300 es
     in vec2 a_position;
     out vec2 v_uv;
-    void main() { v_uv = a_position * 0.5 + 0.5; gl_Position = vec4(a_position, 0.0, 1.0); }
+    void main() {
+        v_uv = a_position * 0.5 + 0.5;
+        gl_Position = vec4(a_position, 0.0, 1.0);
+    }
 </script>
 
 <script type="x-shader/x-fragment" id="fs-pathtrace">
     #version 300 es
     precision highp float;
 
-    in vec2 v_uv; out vec4 outColor;
-    uniform vec2 u_resolution; uniform float u_time; uniform int u_frame;
-    uniform int u_bounces; uniform float u_worldScale;
-    
-    struct CamData { vec3 pos; vec3 fwd; vec3 right; vec3 up; float fovScale; };
-    uniform CamData u_cam;
-    
-    uniform vec3 u_sunDir; uniform vec3 u_sunColor;
-    uniform vec3 u_skyColor; uniform vec3 u_horizonColor; uniform vec3 u_floorColor;
-    
-    uniform int u_objCount; uniform int u_selectedObj;
+    in vec2 v_uv;
+    out vec4 outColor;
 
-    struct Object { vec4 pos_type; vec4 scale_mat; vec4 color_props; vec4 rot_ior; };
+    uniform vec2 u_resolution;
+    uniform float u_time;
+    uniform int u_frame;
+    uniform int u_bounces;
+    uniform int u_showOutlines;
+    uniform float u_fogDensity;
+    
+    struct CamData {
+        vec3 pos; vec3 fwd; vec3 right; vec3 up; vec3 color; float fovScale; float visible;
+    };
+    uniform CamData u_cams[2];
+    uniform int u_activeCam;
+    
+    uniform vec3 u_sunDir;
+    uniform vec3 u_sunColor;
+    uniform vec3 u_skyColor;
+    uniform vec3 u_horizonColor;
+    uniform vec3 u_floorColor;
+    
+    uniform int u_objCount;
+    uniform int u_selectedObj;
+
+    struct Object {
+        vec4 pos_type;    
+        vec4 scale_mat;   
+        vec4 color_props; 
+        vec4 extra;
+        vec4 rotation;
+    };
     uniform Object u_objects[64];
-    uniform Object u_gizmos[6]; uniform int u_showGizmos;
 
-    // VR AVATARS (GI Shadows & Mirrors)
-    struct VRAvatar { vec3 pos; vec3 rot; vec3 scale; int type; };
-    uniform VRAvatar u_vr[3]; // 0:Head, 1:Left, 2:Right
-    uniform int u_inVR;
-    uniform sampler2D u_menuTex;
+    uniform int u_vrHandsEnabled;
+    uniform vec4 u_vrHands[2]; // xyz position, w radius
+    uniform int u_vrAvatarVisible;
 
     uint seed;
-    uint rand() { seed ^= seed << 13u; seed ^= seed >> 17u; seed ^= seed << 5u; return seed; }
+    uint rand() {
+        seed ^= seed << 13u;
+        seed ^= seed >> 17u;
+        seed ^= seed << 5u;
+        return seed;
+    }
     float randomFloat() { return float(rand()) * 2.3283064365386963e-10; }
     vec3 randomInUnitSphere() {
-        float theta = randomFloat() * 6.2831853; float v = randomFloat(); float phi = acos(2.0 * v - 1.0);
-        float r = pow(randomFloat(), 0.333333); return r * vec3(sin(phi)*cos(theta), sin(phi)*sin(theta), cos(phi));
+        float theta = randomFloat() * 6.2831853;
+        float v = randomFloat();
+        float phi = acos(2.0 * v - 1.0);
+        float r = pow(randomFloat(), 0.333333);
+        return r * vec3(sin(phi)*cos(theta), sin(phi)*sin(theta), cos(phi));
     }
 
     struct Ray { vec3 ro; vec3 rd; };
-    struct Hit { float dist; vec3 normal; int matType; vec3 color; float prop; float ior; int id; vec3 localPos; };
-
-    mat3 getRotMatrix(vec3 rads) {
-        vec3 s = sin(rads); vec3 c = cos(rads);
-        mat3 mx = mat3(1.0,0.0,0.0, 0.0,c.x,-s.x, 0.0,s.x,c.x);
-        mat3 my = mat3(c.y,0.0,s.y, 0.0,1.0,0.0, -s.y,0.0,c.y);
-        mat3 mz = mat3(c.z,-s.z,0.0, s.z,c.z,0.0, 0.0,0.0,1.0);
-        return mz * my * mx;
-    }
+    struct Hit { float dist; vec3 normal; int matType; vec3 color; float prop; float ior; int id; };
 
     void intersectPlane(Ray ray, vec3 n, float d, inout Hit bestHit) {
         float t = -(dot(ray.ro, n) + d) / dot(ray.rd, n);
         if(t > 0.001 && t < bestHit.dist) {
-            bestHit.dist = t; bestHit.normal = n; bestHit.matType = 0; bestHit.color = u_floorColor;
+            bestHit.dist = t; bestHit.normal = n; 
+            bestHit.matType = 0; bestHit.color = u_floorColor;
             bestHit.prop = 0.8; bestHit.ior = 1.0; bestHit.id = -1;
         }
     }
 
-    void intersectSphere(Ray ray, vec3 center, float radius, int matType, vec3 color, float prop, float ior, int id, inout Hit bestHit) {
-        vec3 oc = ray.ro - center; float b = dot(oc, ray.rd); float c = dot(oc, oc) - radius * radius;
+    void intersectSphere(Ray ray, vec3 center, float radius, Object obj, int id, inout Hit bestHit) {
+        vec3 oc = ray.ro - center;
+        float b = dot(oc, ray.rd);
+        float c = dot(oc, oc) - radius * radius;
         float h = b * b - c;
         if(h > 0.0) {
             float t = -b - sqrt(h);
             if(t > 0.001 && t < bestHit.dist) {
-                bestHit.dist = t; bestHit.normal = normalize((ray.ro + ray.rd * t) - center);
-                bestHit.matType = matType; bestHit.color = color;
-                bestHit.prop = prop; bestHit.ior = ior; bestHit.id = id;
+                bestHit.dist = t;
+                bestHit.normal = normalize((ray.ro + ray.rd * t) - center);
+                bestHit.matType = int(obj.scale_mat.w); bestHit.color = obj.color_props.rgb;
+                bestHit.prop = obj.color_props.w; bestHit.ior = obj.extra.w; bestHit.id = id;
             }
         }
     }
 
-    void intersectBox(Ray ray, vec3 center, vec3 extents, vec3 rotEul, int matType, vec3 color, float prop, float ior, int id, inout Hit bestHit) {
-        mat3 rMat = getRotMatrix(rotEul); mat3 invRMat = transpose(rMat);
-        vec3 localRo = invRMat * (ray.ro - center); vec3 localRd = invRMat * ray.rd;
-        vec3 invRd = 1.0 / (localRd + 1e-8);
-        vec3 t0 = (-extents - localRo) * invRd; vec3 t1 = (extents - localRo) * invRd;
+    mat3 objectBasis(vec3 r) {
+        float cx=cos(r.x), sx=sin(r.x), cy=cos(r.y), sy=sin(r.y), cz=cos(r.z), sz=sin(r.z);
+        return mat3(cy*cz, cy*sz, -sy,
+                    sx*sy*cz-cx*sz, sx*sy*sz+cx*cz, sx*cy,
+                    cx*sy*cz+sx*sz, cx*sy*sz-sx*cz, cx*cy);
+    }
+    void intersectBox(Ray ray, vec3 center, vec3 extents, Object obj, int id, inout Hit bestHit) {
+        mat3 basis = objectBasis(obj.rotation.xyz);
+        vec3 lro = transpose(basis) * (ray.ro - center);
+        vec3 lrd = transpose(basis) * ray.rd;
+        vec3 invRd = 1.0 / (lrd + 1e-8);
+        vec3 t0 = (-extents - lro) * invRd;
+        vec3 t1 = ( extents - lro) * invRd;
+        vec3 tmin = min(t0, t1); vec3 tmax = max(t0, t1);
+        float tnear = max(max(tmin.x, tmin.y), tmin.z);
+        float tfar = min(min(tmax.x, tmax.y), tmax.z);
+        if(tnear < tfar && tnear > 0.001 && tnear < bestHit.dist) {
+            bestHit.dist = tnear;
+            vec3 p = lro + lrd * tnear;
+            vec3 absP = abs(p) / max(extents, vec3(1e-5));
+            vec3 n = vec3(0.0);
+            if(absP.x > absP.y && absP.x > absP.z) n = vec3(sign(p.x),0.0,0.0);
+            else if(absP.y > absP.z) n = vec3(0.0,sign(p.y),0.0);
+            else n = vec3(0.0,0.0,sign(p.z));
+            bestHit.normal = normalize(basis * n);
+            bestHit.matType = int(obj.scale_mat.w); bestHit.color = obj.color_props.rgb;
+            bestHit.prop = obj.color_props.w; bestHit.ior = obj.extra.w; bestHit.id = id;
+        }
+    }
+
+    void intersectCameraMesh(Ray ray, int bounce, CamData c, int camId, inout Hit bestHit) {
+        if(c.visible < 0.5) return;
+        if(bounce == 0 && camId == u_activeCam) return;
+
+        vec3 relRo = ray.ro - c.pos;
+        vec3 lRo = vec3(dot(relRo, c.right), dot(relRo, c.up), dot(relRo, c.fwd));
+        vec3 lRd = vec3(dot(ray.rd, c.right), dot(ray.rd, c.up), dot(ray.rd, c.fwd));
+        vec3 invRd = 1.0 / (lRd + 1e-8);
+
+        vec3 boxCenter = vec3(0.0, 0.0, -0.2); vec3 boxExtents = vec3(0.2, 0.15, 0.15);
+        vec3 t0 = (boxCenter - boxExtents - lRo) * invRd; vec3 t1 = (boxCenter + boxExtents - lRo) * invRd;
         vec3 tmin = min(t0, t1); vec3 tmax = max(t0, t1);
         float tnear = max(max(tmin.x, tmin.y), tmin.z); float tfar = min(min(tmax.x, tmax.y), tmax.z);
         if(tnear < tfar && tnear > 0.001 && tnear < bestHit.dist) {
-            bestHit.dist = tnear; vec3 p = localRo + localRd * tnear; bestHit.localPos = p;
-            vec3 absP = abs(p) / extents; vec3 localN = vec3(0.0);
+            bestHit.dist = tnear;
+            vec3 p = (lRo + lRd * tnear) - boxCenter; vec3 absP = abs(p) / boxExtents;
+            vec3 localN = vec3(0.0);
             if(absP.x > absP.y && absP.x > absP.z) localN = vec3(sign(p.x),0.0,0.0);
-            else if(absP.y > absP.z) localN = vec3(0.0,sign(p.y),0.0); else localN = vec3(0.0,0.0,sign(p.z));
-            bestHit.normal = normalize(rMat * localN); bestHit.matType = matType; bestHit.color = color;
-            bestHit.prop = prop; bestHit.ior = ior; bestHit.id = id;
+            else if(absP.y > absP.z) localN = vec3(0.0,sign(p.y),0.0);
+            else localN = vec3(0.0,0.0,sign(p.z));
+            
+            bestHit.normal = normalize(localN.x * c.right + localN.y * c.up + localN.z * c.fwd);
+            bestHit.matType = 0; bestHit.color = c.color; bestHit.prop = 0.9; bestHit.id = -99;
+        }
+
+        vec3 coneCenter = vec3(0.0, 0.0, 0.05); vec3 coneExtents = vec3(0.12, 0.1, 0.1);
+        t0 = (coneCenter - coneExtents - lRo) * invRd; t1 = (coneCenter + coneExtents - lRo) * invRd;
+        tmin = min(t0, t1); tmax = max(t0, t1);
+        tnear = max(max(tmin.x, tmin.y), tmin.z); tfar = min(min(tmax.x, tmax.y), tmax.z);
+        if(tnear < tfar && tnear > 0.001 && tnear < bestHit.dist) {
+            bestHit.dist = tnear;
+            vec3 localP = lRo + lRd * tnear;
+            vec3 localN = vec3(0.0, 0.0, 1.0);
+            if(localP.z < 0.05) localN = normalize(vec3(localP.x * 2.0, localP.y * 2.0, -0.5));
+            bestHit.normal = normalize(localN.x * c.right + localN.y * c.up + localN.z * c.fwd);
+            bestHit.matType = 0; bestHit.color = vec3(0.05); bestHit.prop = 1.0; bestHit.id = -99;
         }
     }
 
     Hit map(Ray ray, int bounce) {
-        Hit hit = Hit(9999.0, vec3(0,1,0), 0, vec3(1), 1.0, 1.0, -1, vec3(0));
+        Hit hit = Hit(9999.0, vec3(0,1,0), 0, vec3(1), 1.0, 1.0, -1);
         intersectPlane(ray, vec3(0,1,0), 0.0, hit);
 
         for(int i = 0; i < 64; i++) {
-            if(i >= u_objCount) break; Object obj = u_objects[i];
-            if(int(obj.pos_type.w) == 0) intersectBox(ray, obj.pos_type.xyz, obj.scale_mat.xyz, obj.rot_ior.xyz, int(obj.scale_mat.w), obj.color_props.rgb, obj.color_props.w, obj.rot_ior.w, i, hit);
-            else intersectSphere(ray, obj.pos_type.xyz, obj.scale_mat.x, int(obj.scale_mat.w), obj.color_props.rgb, obj.color_props.w, obj.rot_ior.w, i, hit);
+            if(i >= u_objCount) break;
+            Object obj = u_objects[i];
+            if(int(obj.pos_type.w) == 0) intersectBox(ray, obj.pos_type.xyz, obj.scale_mat.xyz, obj, i, hit);
+            else intersectSphere(ray, obj.pos_type.xyz, obj.scale_mat.x, obj, i, hit);
         }
 
-        // GI VR Avatars (Head, Hands, Menu)
-        if(u_inVR == 1) {
-            intersectBox(ray, u_vr[0].pos, u_vr[0].scale, u_vr[0].rot, 0, vec3(0.2), 0.5, 1.0, -98, hit); // Head
-            intersectBox(ray, u_vr[1].pos, u_vr[1].scale, u_vr[1].rot, 0, vec3(0.7), 0.5, 1.0, -98, hit); // Left Hand
-            intersectBox(ray, u_vr[2].pos, u_vr[2].scale, u_vr[2].rot, 0, vec3(0.7), 0.5, 1.0, -98, hit); // Right Hand
-            
-            // Hovering Hand Menu (Attached to Right Hand)
-            mat3 hMat = getRotMatrix(u_vr[2].rot);
-            vec3 menuPos = u_vr[2].pos + hMat * vec3(0.0, 0.15, -0.05); // Above and slightly forward
-            intersectBox(ray, menuPos, vec3(0.12, 0.08, 0.005), u_vr[2].rot, 3, vec3(1.0), 1.0, 1.0, -99, hit);
+        for(int c = 0; c < 2; c++) {
+            intersectCameraMesh(ray, bounce, u_cams[c], c, hit);
         }
 
-        if(u_showGizmos == 1 && bounce == 0) {
-            for(int i=0; i<6; i++) {
-                Object g = u_gizmos[i];
-                if(int(g.pos_type.w) == 0) intersectBox(ray, g.pos_type.xyz, g.scale_mat.xyz, g.rot_ior.xyz, 3, g.color_props.rgb, 1.0, 1.0, -50 - i, hit);
-                else intersectSphere(ray, g.pos_type.xyz, g.scale_mat.x, 3, g.color_props.rgb, 1.0, 1.0, -50 - i, hit);
+        if(u_vrHandsEnabled == 1 && u_vrAvatarVisible == 1) {
+            for(int h=0; h<2; h++) {
+                vec3 oc = ray.ro - u_vrHands[h].xyz;
+                float b = dot(oc, ray.rd);
+                float c = dot(oc, oc) - u_vrHands[h].w * u_vrHands[h].w;
+                float hh = b*b-c;
+                if(hh > 0.0) {
+                    float t = -b - sqrt(hh);
+                    if(t > 0.001 && t < hit.dist) {
+                        hit.dist=t; hit.normal=normalize(ray.ro+ray.rd*t-u_vrHands[h].xyz);
+                        hit.matType=0; hit.color=vec3(0.12,0.8,0.95); hit.prop=0.15; hit.ior=1.0; hit.id=-10-h;
+                    }
+                }
             }
         }
         return hit;
@@ -234,23 +520,62 @@
             if (bounce >= u_bounces) break;
             Hit hit = map(ray, bounce);
 
+            if (u_fogDensity > 0.0001) {
+                float maxFogDist = min(hit.dist, 30.0);
+                int steps = 10;
+                float stepSize = maxFogDist / float(steps);
+                float stepOffset = randomFloat() * stepSize;
+                vec3 fogAccum = vec3(0.0);
+
+                for(int s = 0; s < 10; s++) {
+                    float tStep = stepOffset + float(s) * stepSize;
+                    if(tStep >= maxFogDist) break;
+                    vec3 pos = ray.ro + ray.rd * tStep;
+
+                    if(dot(u_sunColor, u_sunColor) > 0.0001) {
+                        vec3 sDir = normalize(u_sunDir);
+                        Hit sHit = map(Ray(pos + sDir * 0.01, sDir), 99);
+                        if(sHit.dist > 9998.0) {
+                            fogAccum += u_sunColor * u_fogDensity * stepSize;
+                        }
+                    }
+
+                    for(int i = 0; i < 64; i++) {
+                        if(i >= u_objCount) break;
+                        Object obj = u_objects[i];
+                        if(int(obj.scale_mat.w) == 3) {
+                            vec3 ePos = obj.pos_type.xyz;
+                            vec3 toLight = ePos - pos;
+                            float distSq = dot(toLight, toLight) + 0.05;
+                            float dist = sqrt(distSq);
+                            vec3 lDir = toLight / dist;
+
+                            Hit eHit = map(Ray(pos + lDir * 0.001, lDir), 99);
+                            if(eHit.id == i || eHit.dist >= dist - 0.2) {
+                                vec3 emitCol = obj.color_props.rgb * (obj.color_props.w + 0.1) * 20.0;
+                                fogAccum += (emitCol / (distSq + 0.2)) * u_fogDensity * stepSize;
+                            }
+                        }
+                    }
+                }
+                col += throughput * fogAccum;
+                throughput *= exp(-u_fogDensity * maxFogDist * 0.5);
+            }
+            
             if(hit.dist > 9998.0) {
-                float t = 0.5 * (ray.rd.y + 1.0); vec3 sky = mix(u_horizonColor, u_skyColor, t);
+                float t = 0.5 * (ray.rd.y + 1.0);
+                vec3 sky = mix(u_horizonColor, u_skyColor, t);
                 sky += u_sunColor * min(pow(max(0.0, dot(ray.rd, u_sunDir)), 128.0) * 2.0, 4.0);
-                col += throughput * sky; break;
+                col += throughput * sky;
+                break;
             }
 
-            if(hit.id <= -50 && hit.id >= -55) { col += throughput * hit.color * hit.prop * 2.0; break; }
-
-            // VR UI Menu mapped texture logic
-            if(hit.id == -99) {
-                vec2 uv = hit.localPos.xy / vec2(0.12, 0.08) * 0.5 + 0.5;
-                uv.y = 1.0 - uv.y; // Flip Y
-                vec3 texCol = texture(u_menuTex, uv).rgb;
-                col += throughput * texCol * 2.5; break; // Emissive Menu
+            if (u_showOutlines == 1 && hit.id == u_selectedObj && hit.dist < 9998.0 && bounce == 0) {
+                if (1.0 - max(dot(-ray.rd, hit.normal), 0.0) > 0.75) { col += vec3(1.0, 0.8, 0.0); break; }
             }
 
-            vec3 p = ray.ro + ray.rd * hit.dist; vec3 n = hit.normal;
+            vec3 p = ray.ro + ray.rd * hit.dist;
+            vec3 n = hit.normal;
 
             if(hit.matType == 0) {
                 vec3 jitteredSun = normalize(u_sunDir + randomInUnitSphere() * 0.03);
@@ -262,22 +587,29 @@
                 throughput *= hit.color * 0.5;
             } 
             else if(hit.matType == 1) {
-                ray.ro = p + n * 0.002; ray.rd = normalize(reflect(ray.rd, n) + randomInUnitSphere() * hit.prop * 0.2);
+                ray.ro = p + n * 0.002;
+                ray.rd = normalize(reflect(ray.rd, n) + randomInUnitSphere() * hit.prop * 0.2);
                 throughput *= hit.color;
             }
             else if(hit.matType == 2) {
                 float ior = hit.ior; vec3 outwardNormal = n; float eta = 1.0 / ior;
                 if(dot(ray.rd, n) > 0.0) { outwardNormal = -n; eta = ior; }
+                
                 float r0 = (1.0 - ior) / (1.0 + ior); r0 = r0 * r0;
                 float f = r0 + (1.0 - r0) * pow(1.0 - max(0.0, dot(-ray.rd, outwardNormal)), 5.0);
-                if(randomFloat() < f) { ray.rd = reflect(ray.rd, outwardNormal); ray.ro = p + outwardNormal * 0.002; } 
-                else {
+                
+                if(randomFloat() < f) {
+                    ray.rd = reflect(ray.rd, outwardNormal); ray.ro = p + outwardNormal * 0.002;
+                } else {
                     vec3 refr = refract(ray.rd, outwardNormal, eta);
-                    ray.rd = (length(refr) == 0.0) ? reflect(ray.rd, outwardNormal) : refr; ray.ro = p - outwardNormal * 0.002;
+                    ray.rd = (length(refr) == 0.0) ? reflect(ray.rd, outwardNormal) : refr;
+                    ray.ro = p - outwardNormal * 0.002;
                 }
                 throughput *= hit.color;
             }
-            else if(hit.matType == 3) { col += throughput * hit.color * hit.prop * 5.0; break; }
+            else if(hit.matType == 3) {
+                col += throughput * hit.color * hit.prop * 5.0; break;
+            }
             throughput = clamp(throughput, 0.0, 2.0);
         }
         return clamp(col, 0.0, 3.0);
@@ -286,28 +618,36 @@
     void main() {
         uvec2 pxy = uvec2(gl_FragCoord.xy);
         seed = pxy.x + pxy.y * 8192u + uint(u_frame) * 91923u;
-        vec2 uv = (v_uv - 0.5) * 2.0;
-        uv.x += (randomFloat() - 0.5) / u_resolution.x; uv.y += (randomFloat() - 0.5) / u_resolution.y;
 
-        Ray ray; ray.ro = u_cam.pos;
-        ray.rd = normalize(u_cam.fwd + (uv.x * u_cam.right * u_cam.fovScale * (u_resolution.x / u_resolution.y)) + (uv.y * u_cam.up * u_cam.fovScale));
+        vec2 uv = (v_uv - 0.5) * 2.0;
+        uv.x += (randomFloat() - 0.5) / u_resolution.x;
+        uv.y += (randomFloat() - 0.5) / u_resolution.y;
+
+        CamData cam = u_cams[u_activeCam];
+        Ray ray; ray.ro = cam.pos;
+        ray.rd = normalize(cam.fwd + (uv.x * cam.right * cam.fovScale * (u_resolution.x / u_resolution.y)) + (uv.y * cam.up * cam.fovScale));
+
         outColor = vec4(trace(ray), 1.0);
     }
 </script>
 
 <script type="x-shader/x-fragment" id="fs-accumulate">
     #version 300 es
-    precision highp float; in vec2 v_uv; out vec4 outColor;
+    precision highp float;
+    in vec2 v_uv; out vec4 outColor;
     uniform sampler2D u_current; uniform sampler2D u_history; uniform float u_weight;
     void main() {
-        vec3 cur = texture(u_current, v_uv).rgb; vec3 hist = texture(u_history, v_uv).rgb;
+        vec3 cur = texture(u_current, v_uv).rgb;
+        vec3 hist = texture(u_history, v_uv).rgb;
         outColor = vec4(mix(hist, cur, u_weight), 1.0);
     }
 </script>
 
 <script type="x-shader/x-fragment" id="fs-display">
     #version 300 es
-    precision highp float; in vec2 v_uv; out vec4 outColor; uniform sampler2D u_texture;
+    precision highp float;
+    in vec2 v_uv; out vec4 outColor;
+    uniform sampler2D u_texture;
     void main() {
         vec3 color = texture(u_texture, v_uv).rgb;
         float a = 2.51; float b = 0.03; float c = 2.43; float d = 0.59; float e = 0.14;
@@ -317,36 +657,30 @@
 </script>
 
 <script>
-// Quaternion & Vector Math Library for VR Hand Rotations
-function quatInvert(q) { return [-q[0], -q[1], -q[2], q[3]]; }
-function quatMult(a, b) { return [ a[0]*b[3]+a[3]*b[0]+a[1]*b[2]-a[2]*b[1], a[1]*b[3]+a[3]*b[1]+a[2]*b[0]-a[0]*b[2], a[2]*b[3]+a[3]*b[2]+a[0]*b[1]-a[1]*b[0], a[3]*b[3]-a[0]*b[0]-a[1]*b[1]-a[2]*b[2] ]; }
-function eulerToQuat(e) { let cx=Math.cos(e[0]/2),sx=Math.sin(e[0]/2),cy=Math.cos(e[1]/2),sy=Math.sin(e[1]/2),cz=Math.cos(e[2]/2),sz=Math.sin(e[2]/2); return [sx*cy*cz-cx*sy*sz, cx*sy*cz+sx*cy*sz, cx*cy*sz-sx*sy*cz, cx*cy*cz+sx*sy*sz]; }
-function quatToEuler(q) {
-    let ysqr = q[1]*q[1], t0 = 2.0*(q[3]*q[0]+q[1]*q[2]), t1 = 1.0-2.0*(q[0]*q[0]+ysqr);
-    let roll = Math.atan2(t0, t1);
-    let t2 = 2.0*(q[3]*q[1]-q[2]*q[0]); t2 = t2>1.0?1.0:t2<-1.0?-1.0:t2;
-    let pitch = Math.asin(t2);
-    let t3 = 2.0*(q[3]*q[2]+q[0]*q[1]), t4 = 1.0-2.0*(ysqr+q[2]*q[2]);
-    let yaw = Math.atan2(t3, t4);
-    return [roll, pitch, yaw];
-}
-function vecRotateQuat(v, q) {
-    let ix=q[3]*v[0]+q[1]*v[2]-q[2]*v[1], iy=q[3]*v[1]+q[2]*v[0]-q[0]*v[2], iz=q[3]*v[2]+q[0]*v[1]-q[1]*v[0], iw=-q[0]*v[0]-q[1]*v[1]-q[2]*v[2];
-    return [ix*q[3]+iw*-q[0]+iy*-q[2]-iz*-q[1], iy*q[3]+iw*-q[1]+iz*-q[0]-ix*-q[2], iz*q[3]+iw*-q[2]+ix*-q[1]-iy*-q[0]];
-}
-
 class Camera {
     constructor() {
-        this.pos = [0, 2, 5]; this.yaw = -Math.PI / 2; this.pitch = 0;
+        this.pos = [0, 2, 5];
+        this.yaw = -Math.PI / 2; this.pitch = 0;
         this.forward = [0,0,-1]; this.right = [1,0,0]; this.up = [0,1,0];
-        this.fov = 90; this.keys = {}; this.speed = 4.0; this.dirty = true;
+        this.fov = 90; this.visible = true; this.colorHex = "#222222";
+        this.keys = {}; this.speed = 4.0; this.dirty = true;
     }
     updateVectors() {
-        this.forward[0] = Math.cos(this.yaw) * Math.cos(this.pitch); this.forward[1] = Math.sin(this.pitch); this.forward[2] = Math.sin(this.yaw) * Math.cos(this.pitch);
-        let len = Math.hypot(this.forward[0], this.forward[1], this.forward[2]); this.forward = this.forward.map(v => v / len);
-        this.right[0] = this.forward[1]*0 - this.forward[2]*1; this.right[1] = this.forward[2]*0 - this.forward[0]*0; this.right[2] = this.forward[0]*1 - this.forward[1]*0;
-        len = Math.hypot(this.right[0], this.right[1], this.right[2]); this.right = this.right.map(v => v / len);
-        this.up[0] = this.right[1]*this.forward[2] - this.right[2]*this.forward[1]; this.up[1] = this.right[2]*this.forward[0] - this.right[0]*this.forward[2]; this.up[2] = this.right[0]*this.forward[1] - this.right[1]*this.forward[0];
+        this.forward[0] = Math.cos(this.yaw) * Math.cos(this.pitch);
+        this.forward[1] = Math.sin(this.pitch);
+        this.forward[2] = Math.sin(this.yaw) * Math.cos(this.pitch);
+        let len = Math.hypot(this.forward[0], this.forward[1], this.forward[2]);
+        this.forward = this.forward.map(v => v / len);
+        
+        this.right[0] = this.forward[1]*0 - this.forward[2]*1;
+        this.right[1] = this.forward[2]*0 - this.forward[0]*0;
+        this.right[2] = this.forward[0]*1 - this.forward[1]*0;
+        len = Math.hypot(this.right[0], this.right[1], this.right[2]);
+        this.right = this.right.map(v => v / len);
+        
+        this.up[0] = this.right[1]*this.forward[2] - this.right[2]*this.forward[1];
+        this.up[1] = this.right[2]*this.forward[0] - this.right[0]*this.forward[2];
+        this.up[2] = this.right[0]*this.forward[1] - this.right[1]*this.forward[0];
     }
     update(dt) {
         let moved = false; let s = this.speed * dt; if(this.keys['Shift']) s *= 2.5;
@@ -358,43 +692,41 @@ class Camera {
         if(this.keys['Control']) { this.pos[1]-=s; moved=true; }
         if(moved) this.dirty = true;
     }
+    getColorRgb() {
+        let bigint = parseInt(this.colorHex.substring(1), 16);
+        return [(bigint >> 16 & 255)/255, (bigint >> 8 & 255)/255, (bigint & 255)/255];
+    }
 }
 
 class RayEngine {
     constructor() {
         this.canvas = document.getElementById('glcanvas');
-        this.gl = this.canvas.getContext('webgl2', { antialias: false, preserveDrawingBuffer: false, xrCompatible: true });
-        if(!this.gl || !this.gl.getExtension('EXT_color_buffer_float')) { document.getElementById('error-screen').style.display='block'; return; }
+        this.gl = this.canvas.getContext('webgl2', { antialias: false, preserveDrawingBuffer: false });
+        if(!this.gl || !this.gl.getExtension('EXT_color_buffer_float')) { 
+            document.getElementById('error-screen').style.display='block'; return; 
+        }
 
         this.objects = []; this.selectedId = -1;
+        this.showOutlines = false;
+        this.fogDensity = 0.02;
+        
+        this.targetFps = 60;
+        this.fpsInterval = 1000 / 60;
+        this.lastFrameTime = performance.now();
+        
         this.camera = new Camera();
-        this.accumFrame = 0; this.resScale = 0.75; this.bounces = 3;
+        this.renderCamera = null; 
         
-        this.activeGizmo = -1; this.gizmoStartPos = [0,0]; this.objStartTransform = [];
-        this.gizmos = []; this.generateGizmos();
-
-        // VR State
-        this.xrSession = null; this.xrRefSpace = null; this.inVR = false;
-        this.vrAvatars = [ // 0:Head, 1:Left, 2:Right
-            {pos:[0,0,0], rot:[0,0,0], scale:[0.09, 0.05, 0.06]},
-            {pos:[0,0,0], rot:[0,0,0], scale:[0.03, 0.04, 0.05]},
-            {pos:[0,0,0], rot:[0,0,0], scale:[0.03, 0.04, 0.05]}
-        ];
-        this.vrGrabbedObj = [-1, -1]; 
-        this.vrGrabOffset = [null, null]; // Stores relPos and relQuat
-        this.vrPrevHandPos = [[0,0,0], [0,0,0]];
+        this.accumFrame = 0; this.prevAccumFrame = 0;
+        this.resScale = 0.75; this.bounces = 3;
         
-        // VR Rendering State (Dual Eye Accumulation)
-        this.fboPT_VR = [null, null]; this.fboAccVR = [[null,null],[null,null]];
-        this.texPT_VR = [null, null]; this.texAccVR = [[null,null],[null,null]];
-        this.accumFrameVR = [0, 0]; this.pingpongVR = [0, 0];
-        this.lastVRPos = [[0,0,0], [0,0,0]]; this.lastVRFwd = [[0,0,0], [0,0,0]];
-        this.vrW = 0; this.vrH = 0;
+        this.isFinalRendering = false;
+        this.renderSamples = 0; this.targetSamples = 1500;
+        this.renderWidth = 3840; this.renderHeight = 2160;
 
-        this.env = { time: 14, sunDir: [0,1,0], sunColor: [1,1,0.9], skyColor: [0.3,0.6,0.9], horizonColor: [0.8,0.9,1.0], floorColor: [0.5,0.5,0.5] };
+        this.env = { time: 14, sunDir: [0,1,0], sunColor: [1,1,0.9], skyColor: [0.3, 0.6, 0.9], horizonColor: [0.8, 0.9, 1.0], floorColor: [0.5, 0.5, 0.5] };
 
         this.initGL();
-        this.generateVRMenuTexture();
         this.bindEvents();
         this.generateDemo();
         this.updateCameras();
@@ -407,8 +739,12 @@ class RayEngine {
 
     openModal(id) { document.getElementById(id).style.display = 'flex'; }
     closeModal(id) { document.getElementById(id).style.display = 'none'; }
-    hexToRgb(hex) { let b = parseInt(hex.substring(1), 16); return [(b>>16&255)/255, (b>>8&255)/255, (b&255)/255]; }
-    rgbToHex(r,g,b) { return "#" + (1<<24 | Math.round(r*255)<<16 | Math.round(g*255)<<8 | Math.round(b*255)).toString(16).slice(1); }
+
+    updateFpsLimit() {
+        const val = parseInt(document.getElementById('fps-limit').value);
+        this.targetFps = val;
+        this.fpsInterval = val > 0 ? (1000 / val) : 0;
+    }
 
     compileShader(type, id) {
         const src = document.getElementById(id).innerText.trim();
@@ -434,9 +770,26 @@ class RayEngine {
         this.accProgram = this.createProgram('vs-quad', 'fs-accumulate');
         this.dispProgram = this.createProgram('vs-quad', 'fs-display');
 
-        this.fboPT = gl.createFramebuffer(); this.fboAcc = [gl.createFramebuffer(), gl.createFramebuffer()];
-        this.texPT = gl.createTexture(); this.texAcc = [gl.createTexture(), gl.createTexture()];
+        this.fboPT = gl.createFramebuffer();
+        this.fboAcc = [gl.createFramebuffer(), gl.createFramebuffer()];
+        this.texPT = gl.createTexture();
+        this.texAcc = [gl.createTexture(), gl.createTexture()];
         this.pingpong = 0;
+
+        this.prevW = 320; this.prevH = 180;
+        this.prevFboPT = gl.createFramebuffer();
+        this.prevFboAcc = [gl.createFramebuffer(), gl.createFramebuffer()];
+        this.prevTexPT = gl.createTexture();
+        this.prevTexAcc = [gl.createTexture(), gl.createTexture()];
+        this.prevPingpong = 0;
+        
+        this.createTarget(this.prevTexPT, this.prevW, this.prevH);
+        this.createTarget(this.prevTexAcc[0], this.prevW, this.prevH);
+        this.createTarget(this.prevTexAcc[1], this.prevW, this.prevH);
+
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.prevFboPT); gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.prevTexPT, 0);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.prevFboAcc[0]); gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.prevTexAcc[0], 0);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.prevFboAcc[1]); gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.prevTexAcc[1], 0);
     }
 
     createTarget(tex, w, h) {
@@ -446,49 +799,17 @@ class RayEngine {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     }
 
-    initVRFBOs(w, h) {
-        const gl = this.gl;
-        for(let eye=0; eye<2; eye++) {
-            if(!this.texPT_VR[eye]) {
-                this.texPT_VR[eye] = gl.createTexture(); this.fboPT_VR[eye] = gl.createFramebuffer();
-                this.texAccVR[eye][0] = gl.createTexture(); this.fboAccVR[eye][0] = gl.createFramebuffer();
-                this.texAccVR[eye][1] = gl.createTexture(); this.fboAccVR[eye][1] = gl.createFramebuffer();
-            }
-            this.createTarget(this.texPT_VR[eye], w, h);
-            this.createTarget(this.texAccVR[eye][0], w, h);
-            this.createTarget(this.texAccVR[eye][1], w, h);
-            gl.bindFramebuffer(gl.FRAMEBUFFER, this.fboPT_VR[eye]); gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.texPT_VR[eye], 0);
-            gl.bindFramebuffer(gl.FRAMEBUFFER, this.fboAccVR[eye][0]); gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.texAccVR[eye][0], 0);
-            gl.bindFramebuffer(gl.FRAMEBUFFER, this.fboAccVR[eye][1]); gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.texAccVR[eye][1], 0);
-            this.accumFrameVR[eye] = 0;
-        }
-    }
-
-    generateVRMenuTexture() {
-        const gl = this.gl;
-        let c = document.createElement('canvas'); c.width = 512; c.height = 256;
-        let ctx = c.getContext('2d');
-        ctx.fillStyle = '#0a2a4a'; ctx.fillRect(0,0,512,256);
-        ctx.strokeStyle = '#00ffff'; ctx.lineWidth = 10; ctx.strokeRect(5,5,502,246);
-        ctx.fillStyle = '#00ffff'; ctx.font = 'bold 45px Tahoma';
-        ctx.fillText('VR SYSTEMS ACTIVE', 30, 60);
-        ctx.font = '30px Tahoma'; ctx.fillStyle = '#ffffff';
-        ctx.fillText('- Grip: Grab & Rotate Shape', 30, 120);
-        ctx.fillText('- Trigger: Air Move', 30, 170);
-        ctx.fillText('- A+X Buttons: Exit VR', 30, 220);
-        this.texVRMenu = gl.createTexture();
-        gl.bindTexture(gl.TEXTURE_2D, this.texVRMenu);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, c);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-    }
-
     resize() {
-        if(this.inVR) return;
-        this.width = Math.floor(window.innerWidth * this.resScale); this.height = Math.floor(window.innerHeight * this.resScale);
+        if(this.isFinalRendering) return;
+        this.resScale = parseFloat(document.getElementById('res-scale').value);
+        this.width = Math.floor(window.innerWidth * this.resScale);
+        this.height = Math.floor(window.innerHeight * this.resScale);
         this.canvas.width = window.innerWidth; this.canvas.height = window.innerHeight;
+        
         this.createTarget(this.texPT, this.width, this.height);
-        this.createTarget(this.texAcc[0], this.width, this.height); this.createTarget(this.texAcc[1], this.width, this.height);
+        this.createTarget(this.texAcc[0], this.width, this.height);
+        this.createTarget(this.texAcc[1], this.width, this.height);
+
         const gl = this.gl;
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.fboPT); gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.texPT, 0);
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.fboAcc[0]); gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.texAcc[0], 0);
@@ -498,314 +819,468 @@ class RayEngine {
 
     bindEvents() {
         window.addEventListener('resize', () => this.resize());
-        document.addEventListener('keydown', e => { 
-            this.camera.keys[e.key.toLowerCase()] = true; this.camera.keys[e.key] = true;
-        });
-        document.addEventListener('keyup', e => { this.camera.keys[e.key.toLowerCase()] = false; this.camera.keys[e.key] = false; });
-        
-        this.canvas.addEventListener('mousedown', (e) => {
-            if(document.pointerLockElement !== this.canvas) {
-                if(this.selectedId >= 0 && this.hitTestGizmos(e)) {
-                    this.activeGizmo = this.hitTestGizmos(e).id;
-                    this.gizmoStartPos = [e.clientX, e.clientY];
-                    this.objStartTransform = [...this.objects[this.selectedId].pos, ...this.objects[this.selectedId].scale];
-                    return;
-                }
-                let hitId = this.hitTestObjects(e);
-                if (hitId >= 0) { this.selectedId = hitId; this.updateUI(); this.accumFrame=0; }
-                else { this.canvas.requestPointerLock(); }
-            }
-        });
+        this.canvas.addEventListener('click', () => this.canvas.requestPointerLock());
         document.addEventListener('pointerlockchange', () => this.locked = (document.pointerLockElement === this.canvas));
         document.addEventListener('mousemove', (e) => {
-            if(this.activeGizmo !== -1) {
-                let dx = (e.clientX - this.gizmoStartPos[0]) * 0.02; let dy = -(e.clientY - this.gizmoStartPos[1]) * 0.02;
-                let o = this.objects[this.selectedId]; let amt = Math.abs(dx) > Math.abs(dy) ? dx : dy;
-                if(this.activeGizmo === 0) o.pos[0] = this.objStartTransform[0] + dx;
-                if(this.activeGizmo === 1) o.pos[1] = this.objStartTransform[1] + dy;
-                if(this.activeGizmo === 2) o.pos[2] = this.objStartTransform[2] + dx;
-                if(this.activeGizmo === 3) o.scale[0] = Math.max(0.1, this.objStartTransform[3] + amt);
-                if(this.activeGizmo === 4) o.scale[1] = Math.max(0.1, this.objStartTransform[4] + amt);
-                if(this.activeGizmo === 5) o.scale[2] = Math.max(0.1, this.objStartTransform[5] + amt);
-                this.updateUI(); this.accumFrame = 0;
-            } else if(this.locked) {
-                this.camera.yaw += e.movementX * 0.002; this.camera.pitch -= e.movementY * 0.002;
-                this.camera.pitch = Math.max(-Math.PI/2.1, Math.min(Math.PI/2.1, this.camera.pitch));
-                this.camera.dirty = true;
-            }
+            if(!this.locked) return;
+            this.camera.yaw += e.movementX * 0.002; this.camera.pitch -= e.movementY * 0.002;
+            this.camera.pitch = Math.max(-Math.PI/2.1, Math.min(Math.PI/2.1, this.camera.pitch));
+            this.camera.dirty = true;
         });
-        document.addEventListener('mouseup', () => { this.activeGizmo = -1; });
+        document.addEventListener('keydown', e => { 
+            this.camera.keys[e.key.toLowerCase()] = true; this.camera.keys[e.key] = true;
+            if(e.key === 'ArrowRight') this.selectNext();
+            if(e.key === 'ArrowLeft') this.selectPrev();
+        });
+        document.addEventListener('keyup', e => { this.camera.keys[e.key.toLowerCase()] = false; this.camera.keys[e.key] = false; });
     }
 
-    getMouseRay(e) {
-        let ndcX = (e.clientX / window.innerWidth) * 2 - 1, ndcY = -(e.clientY / window.innerHeight) * 2 + 1;
-        let fovScale = Math.tan((this.camera.fov / 2) * (Math.PI / 180)), aspect = window.innerWidth / window.innerHeight;
-        let c = this.camera;
-        let rd = [ c.forward[0] + c.right[0] * ndcX * fovScale * aspect + c.up[0] * ndcY * fovScale, c.forward[1] + c.right[1] * ndcX * fovScale * aspect + c.up[1] * ndcY * fovScale, c.forward[2] + c.right[2] * ndcX * fovScale * aspect + c.up[2] * ndcY * fovScale ];
-        let len = Math.hypot(rd[0], rd[1], rd[2]); return { ro: [...c.pos], rd: [rd[0]/len, rd[1]/len, rd[2]/len] };
-    }
-    rayIntersectBox(ray, center, extents) {
-        let t0 = (center[0]-extents[0]-ray.ro[0])/ray.rd[0]; let t1 = (center[0]+extents[0]-ray.ro[0])/ray.rd[0]; let tmin = Math.min(t0,t1); let tmax = Math.max(t0,t1);
-        t0 = (center[1]-extents[1]-ray.ro[1])/ray.rd[1]; t1 = (center[1]+extents[1]-ray.ro[1])/ray.rd[1]; tmin = Math.max(tmin,Math.min(t0,t1)); tmax = Math.min(tmax,Math.max(t0,t1));
-        t0 = (center[2]-extents[2]-ray.ro[2])/ray.rd[2]; t1 = (center[2]+extents[2]-ray.ro[2])/ray.rd[2]; tmin = Math.max(tmin,Math.min(t0,t1)); tmax = Math.min(tmax,Math.max(t0,t1));
-        return tmax >= tmin && tmin > 0 ? tmin : -1;
-    }
-    rayIntersectSphere(ray, center, radius) {
-        let oc = [ray.ro[0]-center[0], ray.ro[1]-center[1], ray.ro[2]-center[2]];
-        let b = oc[0]*ray.rd[0]+oc[1]*ray.rd[1]+oc[2]*ray.rd[2], c = (oc[0]*oc[0]+oc[1]*oc[1]+oc[2]*oc[2])-radius*radius;
-        let h = b*b - c; if(h > 0.0) { let t = -b - Math.sqrt(h); if(t>0) return t; } return -1;
-    }
-    hitTestGizmos(e) {
-        if(this.selectedId < 0) return null; let ray = this.getMouseRay(e); let bestT = 9999; let bestId = -1;
-        this.updateGizmoTransforms();
-        for(let i=0; i<6; i++) {
-            let g = this.gizmos[i]; let t = -1;
-            if(g.type === 0) t = this.rayIntersectBox(ray, g.pos, g.scale); else t = this.rayIntersectSphere(ray, g.pos, g.scale[0]);
-            if(t > 0 && t < bestT) { bestT = t; bestId = i; }
-        }
-        return bestId >= 0 ? {id: bestId, t: bestT} : null;
-    }
-    hitTestObjects(e) {
-        let ray = this.getMouseRay(e); let bestT = 9999; let bestId = -1;
-        for(let i=0; i<this.objects.length; i++) {
-            let o = this.objects[i]; let t = -1;
-            if(o.type === 0) t = this.rayIntersectBox(ray, o.pos, o.scale); else t = this.rayIntersectSphere(ray, o.pos, o.scale[0]);
-            if(t > 0 && t < bestT) { bestT = t; bestId = i; }
-        }
-        return bestId;
+
+    async initXR() {
+        const status = document.getElementById('vr-status');
+        if(!navigator.xr) { status.innerText='WebXR: unavailable'; return; }
+        try {
+            const ok = await navigator.xr.isSessionSupported('immersive-vr');
+            status.innerText = ok ? 'WebXR: ready' : 'WebXR: immersive VR unavailable';
+        } catch(e) { status.innerText='WebXR: unavailable'; }
     }
 
-    generateGizmos() {
-        this.gizmos = [
-            { pos: [0,0,0], type: 0, scale: [0.6, 0.05, 0.05], matType:3, color: [1,0,0], prop: 1, rot: [0,0,0] },
-            { pos: [0,0,0], type: 0, scale: [0.05, 0.6, 0.05], matType:3, color: [0,1,0], prop: 1, rot: [0,0,0] },
-            { pos: [0,0,0], type: 0, scale: [0.05, 0.05, 0.6], matType:3, color: [0,0,1], prop: 1, rot: [0,0,0] },
-            { pos: [0,0,0], type: 1, scale: [0.15, 0.15, 0.15], matType:3, color: [1,0,0], prop: 1, rot: [0,0,0] },
-            { pos: [0,0,0], type: 1, scale: [0.15, 0.15, 0.15], matType:3, color: [0,1,0], prop: 1, rot: [0,0,0] },
-            { pos: [0,0,0], type: 1, scale: [0.15, 0.15, 0.15], matType:3, color: [0,0,1], prop: 1, rot: [0,0,0] }
-        ];
+    async enterVR() {
+        if(this.xrSession) { await this.xrSession.end(); return; }
+        if(!navigator.xr) { alert('WebXR is not available in this browser.'); return; }
+        try {
+            await this.gl.makeXRCompatible();
+            const session = await navigator.xr.requestSession('immersive-vr', {
+                requiredFeatures:['local-floor'],
+                optionalFeatures:['bounded-floor','dom-overlay'],
+                domOverlay:{root:document.body}
+            });
+            this.xrSession=session;
+            session.addEventListener('end',()=>this.exitVR());
+            session.addEventListener('inputsourceschange',()=>this.refreshXRInputs());
+            session.updateRenderState({baseLayer:new XRWebGLLayer(session,this.gl, {antialias:false})});
+            this.xrRefSpace=await session.requestReferenceSpace('local-floor');
+            this.xrHands=[null,null]; this.xrAccum=[0,0]; this.xrPing=[0,0];
+            document.getElementById('vr-hud').style.display='block';
+            document.getElementById('btn-enter-vr').innerText='Exit VR mode';
+            this.locked=false;
+            if(document.pointerLockElement) document.exitPointerLock();
+            session.requestAnimationFrame(this.onXRFrame.bind(this));
+        } catch(e) {
+            console.error(e);
+            this.xrSession=null;
+            alert('Could not enter VR: '+e.message);
+        }
     }
-    updateGizmoTransforms() {
-        if(this.selectedId < 0) return; let o = this.objects[this.selectedId]; let p = o.pos; let s = o.scale;
-        this.gizmos[0].pos = [p[0]+s[0]+0.6, p[1], p[2]]; this.gizmos[1].pos = [p[0], p[1]+s[1]+0.6, p[2]]; this.gizmos[2].pos = [p[0], p[1], p[2]+s[2]+0.6];
-        this.gizmos[3].pos = [p[0]+s[0]+1.4, p[1], p[2]]; this.gizmos[4].pos = [p[0], p[1]+s[1]+1.4, p[2]]; this.gizmos[5].pos = [p[0], p[1], p[2]+s[2]+1.4];
+
+    exitVR() {
+        this.xrSession=null; this.xrRefSpace=null; this.xrFrame=null;
+        this.xrControllers=[null,null]; this.xrHands=[null,null];
+        this.xrGrab=[null,null]; this.xrGrabStart=[null,null];
+        this.spectatorCamera._xrInit=false;
+        document.getElementById('vr-hud').style.display='none';
+        document.getElementById('btn-enter-vr').innerText='Enter VR mode';
+        this.accumFrame=0; this.prevAccumFrame=0;
     }
+
+    updateVRSettings() {
+        this.vrSettings.avatarVisible=document.getElementById('vr-avatar-vis').checked;
+        this.vrSettings.spectatorVisible=document.getElementById('vr-spec-vis').checked;
+        this.vrSettings.gizmosVisible=document.getElementById('vr-gizmos-vis').checked;
+        this.vrSettings.snap=document.getElementById('vr-snap').value;
+        this.vrSettings.nonUniform=document.getElementById('vr-nonuniform').checked;
+        this.spectatorCamera.fov=parseFloat(document.getElementById('vr-spec-fov').value);
+        this.spectatorCamera.visible=this.vrSettings.spectatorVisible;
+        this.accumFrame=0; this.prevAccumFrame=0;
+    }
+
+    refreshXRInputs() {
+        if(!this.xrSession) return;
+        this.xrControllers=[null,null];
+        let i=0;
+        for(const src of this.xrSession.inputSources) {
+            if(!src.gripSpace) continue;
+            if(src.handedness==='left') this.xrControllers[0]=src;
+            else if(src.handedness==='right') this.xrControllers[1]=src;
+            else if(i<2) this.xrControllers[i++]=src;
+        }
+    }
+
+    xrPoseToBasis(pose) {
+        const m=pose.transform.matrix;
+        return {
+            pos:[m[12],m[13],m[14]],
+            right:[m[0],m[1],m[2]],
+            up:[m[4],m[5],m[6]],
+            forward:[-m[8],-m[9],-m[10]]
+        };
+    }
+
+    xrInputState(src, frame) {
+        if(!src || !src.gamepad) return {grip:false,trigger:false};
+        const b=src.gamepad.buttons||[];
+        const grip=(b[1]?.pressed)||(b[4]?.pressed);
+        const trigger=(b[0]?.pressed)||false;
+        return {grip,trigger};
+    }
+
+    snapValue(v, step) {
+        return step>0 ? Math.round(v/step)*step : v;
+    }
+
+    rayPick(origin, dir) {
+        let best=-1, bestT=Infinity;
+        for(let i=0;i<this.objects.length;i++) {
+            const o=this.objects[i];
+            const oc=[origin[0]-o.pos[0],origin[1]-o.pos[1],origin[2]-o.pos[2]];
+            let t=-1;
+            if(o.type===1) {
+                const r=Math.max(o.scale[0],o.scale[1],o.scale[2]);
+                const b=oc[0]*dir[0]+oc[1]*dir[1]+oc[2]*dir[2];
+                const c=oc[0]*oc[0]+oc[1]*oc[1]+oc[2]*oc[2]-r*r;
+                const h=b*b-c; if(h>=0) t=-b-Math.sqrt(h);
+            } else {
+                const ex=o.scale;
+                const inv=[1/(dir[0]||1e-6),1/(dir[1]||1e-6),1/(dir[2]||1e-6)];
+                const t0=[(-ex[0]-oc[0])*inv[0],(-ex[1]-oc[1])*inv[1],(-ex[2]-oc[2])*inv[2]];
+                const t1=[( ex[0]-oc[0])*inv[0],( ex[1]-oc[1])*inv[1],( ex[2]-oc[2])*inv[2]];
+                const tn=Math.max(Math.min(t0[0],t1[0]),Math.min(t0[1],t1[1]),Math.min(t0[2],t1[2]));
+                const tf=Math.min(Math.max(t0[0],t1[0]),Math.max(t0[1],t1[1]),Math.max(t0[2],t1[2]));
+                if(tn<=tf) t=tn;
+            }
+            if(t>0 && t<bestT) {bestT=t;best=i;}
+        }
+        return best;
+    }
+
+    applyGrab(hand, pose, state) {
+        const g=this.xrGrab[hand];
+        if(!g || !pose) return;
+        const o=this.objects[g.id]; if(!o) return;
+        const p=this.xrPoseToBasis(pose);
+        const snap=parseFloat(this.vrSettings.snap)||0;
+        const dx=p.pos[0]-g.startPos[0], dy=p.pos[1]-g.startPos[1], dz=p.pos[2]-g.startPos[2];
+        o.pos=[g.objPos[0]+dx,g.objPos[1]+dy,g.objPos[2]+dz];
+        if(snap) o.pos=o.pos.map(v=>this.snapValue(v,snap));
+        // Controller roll/pitch/yaw deltas become object rotation.
+        const yaw=Math.atan2(p.forward[0],-p.forward[2])-g.startYaw;
+        const pitch=Math.asin(Math.max(-1,Math.min(1,p.forward[1])))-g.startPitch;
+        const roll=Math.atan2(p.up[0],p.up[1])-g.startRoll;
+        const angleStep=snap ? (parseFloat(this.vrSettings.snap)===0.25?Math.PI/12:(parseFloat(this.vrSettings.snap)===0.5?Math.PI/6:Math.PI/4)) : 0;
+        o.rotation=[g.objRot[0]+(angleStep?this.snapValue(pitch,angleStep):pitch),
+                    g.objRot[1]+(angleStep?this.snapValue(yaw,angleStep):yaw),
+                    g.objRot[2]+(angleStep?this.snapValue(roll,angleStep):roll)];
+        if(state.trigger && this.vrSettings.nonUniform) {
+            const d=Math.max(.1,1+dy*1.5);
+            o.scale=[Math.max(.05,g.objScale[0]*d),Math.max(.05,g.objScale[1]*(1+dx*1.5)),Math.max(.05,g.objScale[2]*(1+dz*1.5))];
+        }
+        this.selectedId=g.id; this.updateUI(); this.accumFrame=0; this.prevAccumFrame=0;
+    }
+
+    processXRHands(frame, refSpace) {
+        if(!this.xrSession) return;
+        for(let h=0;h<2;h++) {
+            const src=this.xrControllers[h]; if(!src) {this.xrHands[h]=null;continue;}
+            const pose=frame.getPose(src.gripSpace,refSpace); if(!pose) continue;
+            const p=this.xrPoseToBasis(pose);
+            this.xrHands[h]=p.pos;
+            const state=this.xrInputState(src,frame);
+            const was=this.xrGrab[h];
+            if(state.grip && !was) {
+                const id=this.rayPick(p.pos,p.forward);
+                if(id>=0) {
+                    const o=this.objects[id];
+                    this.xrGrab[h]={id,startPos:[...p.pos],objPos:[...o.pos],objRot:[...(o.rotation||[0,0,0])],
+                        objScale:[...o.scale],startYaw:Math.atan2(p.forward[0],-p.forward[2]),startPitch:Math.asin(Math.max(-1,Math.min(1,p.forward[1]))),startRoll:Math.atan2(p.up[0],p.up[1])};
+                    this.selectedId=id;
+                }
+            } else if(!state.grip && was) this.xrGrab[h]=null;
+            if(state.grip) this.applyGrab(h,pose,state);
+            document.getElementById(h===0?'vr-left-info':'vr-right-info').innerText=state.grip?(this.xrGrab[h]?`Grabbing #${this.xrGrab[h].id}${state.trigger?' • SCALE':''}`:'Grip'): 'Grip: free';
+        }
+        // Two-hand uniform scaling: distance ratio controls both hands.
+        if(this.xrGrab[0] && this.xrGrab[1]) {
+            const a=this.xrHands[0],b=this.xrHands[1];
+            const d=Math.hypot(a[0]-b[0],a[1]-b[1],a[2]-b[2]);
+            const g0=this.xrGrab[0], g1=this.xrGrab[1];
+            if(g0.id===g1.id && d>0.02) {
+                const base=(g0.objScale[0]+g0.objScale[1]+g0.objScale[2])/3;
+                const factor=Math.max(.1,Math.min(10,d/(g0.startDistance||d)));
+                const o=this.objects[g0.id]; o.scale=[base*factor,base*factor,base*factor];
+                g0.startDistance=g0.startDistance||d; g1.startDistance=g1.startDistance||d;
+                this.accumFrame=0; this.prevAccumFrame=0; this.updateUI();
+            }
+        }
+    }
+
+    onXRFrame(t, frame) {
+        if(!this.xrSession) return;
+        this.xrFrame=frame;
+        const session=this.xrSession, gl=this.gl;
+        session.requestAnimationFrame(this.onXRFrame.bind(this));
+        const pose=frame.getViewerPose(this.xrRefSpace);
+        if(!pose) return;
+        const headM=pose.transform.inverse.matrix;
+        if(!this.spectatorCamera._xrInit) {
+            this.spectatorCamera.pos=[headM[12],headM[13],headM[14]];
+            this.spectatorCamera._xrInit=true;
+        }
+        this.spectatorCamera.right=[headM[0],headM[1],headM[2]];
+        this.spectatorCamera.up=[headM[4],headM[5],headM[6]];
+        this.spectatorCamera.forward=[-headM[8],-headM[9],-headM[10]];
+        const moveSrc=this.xrControllers[0] || this.xrControllers[1];
+        if(moveSrc && moveSrc.gamepad) {
+            const ax=moveSrc.gamepad.axes||[];
+            const sx=ax[2]??ax[0]??0, sy=ax[3]??ax[1]??0;
+            const speed=2.5/60;
+            this.spectatorCamera.pos[0] += (this.spectatorCamera.right[0]*sx + this.spectatorCamera.forward[0]*-sy)*speed;
+            this.spectatorCamera.pos[1] += (this.spectatorCamera.right[1]*sx + this.spectatorCamera.forward[1]*-sy)*speed;
+            this.spectatorCamera.pos[2] += (this.spectatorCamera.right[2]*sx + this.spectatorCamera.forward[2]*-sy)*speed;
+        }
+        this.processXRHands(frame,this.xrRefSpace);
+        const layer=session.renderState.baseLayer;
+        const oldRenderCamera=this.renderCamera;
+        if(this.vrSettings.spectatorVisible) this.renderCamera=this.spectatorCamera;
+        gl.bindFramebuffer(gl.FRAMEBUFFER,layer.framebuffer);
+        gl.clearColor(0,0,0,1); gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+        for(let eye=0;eye<pose.views.length;eye++) {
+            const view=pose.views[eye], vp=layer.getViewport(view);
+            const m=view.transform.inverse.matrix;
+            const cam={pos:[m[12],m[13],m[14]],right:[m[0],m[1],m[2]],up:[m[4],m[5],m[6]],forward:[-m[8],-m[9],-m[10]],fov:90,visible:false,getColorRgb:()=>[0,0,0]};
+            const fovScale=1/(view.projectionMatrix[5]||1);
+            this.executePathTrace(null,null,null,null,null,vp.width,vp.height,0,this.xrAccum[eye]||0,cam,fovScale,vp.x,vp.y,layer.framebuffer);
+            this.xrAccum[eye]=(this.xrAccum[eye]||0)+1;
+        }
+        this.renderCamera=oldRenderCamera;
+    }
+    hexToRgb(hex) { let b = parseInt(hex.substring(1), 16); return [(b>>16&255)/255, (b>>8&255)/255, (b&255)/255]; }
+    rgbToHex(r,g,b) { return "#" + (1<<24 | Math.round(r*255)<<16 | Math.round(g*255)<<8 | Math.round(b*255)).toString(16).slice(1); }
 
     spawnObject(type) {
         if(this.objects.length >= 64) return;
-        let fwd = this.camera.forward, p = [this.camera.pos[0] + fwd[0]*3, Math.max(0.5, this.camera.pos[1] + fwd[1]*3), this.camera.pos[2] + fwd[2]*3];
-        this.objects.push({ pos: p, type: type, scale: [1,1,1], rot:[0,0,0], matType: 0, color: [Math.random(), Math.random(), Math.random()], prop: 0.1, ior: 1.5 });
-        this.selectedId = this.objects.length - 1; this.updateUI(); this.accumFrame = 0;
+        let fwd = this.camera.forward;
+        let p = [this.camera.pos[0] + fwd[0]*3, Math.max(0.5, this.camera.pos[1] + fwd[1]*3), this.camera.pos[2] + fwd[2]*3];
+        this.objects.push({ pos: p, type: type, scale: [1,1,1], rotation:[0,0,0], matType: 0, color: [Math.random(), Math.random(), Math.random()], prop: 0.1, ior: 1.5 });
+        this.selectedId = this.objects.length - 1; this.updateUI(); this.accumFrame = 0; this.prevAccumFrame = 0;
     }
-    clearScene() { this.objects = []; this.selectedId = -1; this.accumFrame = 0; this.updateUI(); }
+    clearScene() { this.objects = []; this.selectedId = -1; this.accumFrame = 0; this.prevAccumFrame = 0; this.updateUI(); }
+    deleteSelected() {
+        if(this.selectedId < 0) return; this.objects.splice(this.selectedId, 1);
+        this.selectedId = -1; this.accumFrame = 0; this.prevAccumFrame = 0; this.updateUI();
+    }
+    duplicateSelected() {
+        if(this.selectedId < 0) return; let o = JSON.parse(JSON.stringify(this.objects[this.selectedId]));
+        o.pos[0] += 1.0; this.objects.push(o); this.selectedId = this.objects.length - 1;
+        this.accumFrame = 0; this.prevAccumFrame = 0; this.updateUI();
+    }
+    selectNext() { if(this.objects.length>0) { this.selectedId = (this.selectedId + 1) % this.objects.length; this.accumFrame=0; this.updateUI(); } }
+    selectPrev() { if(this.objects.length>0) { this.selectedId = (this.selectedId - 1 + this.objects.length) % this.objects.length; this.accumFrame=0; this.updateUI(); } }
+
+    toggleOutlines() {
+        this.showOutlines = !this.showOutlines;
+        document.getElementById('btn-outlines').innerText = `Selection Outlines: ${this.showOutlines ? 'ON' : 'OFF'}`;
+        this.accumFrame = 0; this.prevAccumFrame = 0;
+    }
+
+    updateFog() {
+        this.fogDensity = parseFloat(document.getElementById('fog-density').value);
+        this.accumFrame = 0; this.prevAccumFrame = 0;
+    }
 
     updateSelected() {
         if(this.selectedId < 0) return; let o = this.objects[this.selectedId];
-        o.rot[0] = parseFloat(document.getElementById('obj-rot-x').value) * Math.PI/180; o.rot[1] = parseFloat(document.getElementById('obj-rot-y').value) * Math.PI/180; o.rot[2] = parseFloat(document.getElementById('obj-rot-z').value) * Math.PI/180;
-        o.matType = parseInt(document.getElementById('mat-type').value); o.color = this.hexToRgb(document.getElementById('mat-color').value); o.prop = parseFloat(document.getElementById('mat-re').value);
-        this.accumFrame = 0;
+        o.pos[0] = parseFloat(document.getElementById('obj-pos-x').value); o.pos[1] = parseFloat(document.getElementById('obj-pos-y').value); o.pos[2] = parseFloat(document.getElementById('obj-pos-z').value);
+        o.matType = parseInt(document.getElementById('mat-type').value);
+        o.color = this.hexToRgb(document.getElementById('mat-color').value);
+        o.prop = parseFloat(document.getElementById('mat-re').value);
+        let s = parseFloat(document.getElementById('obj-scale').value); o.scale = [s,s,s];
+        this.accumFrame = 0; this.prevAccumFrame = 0;
     }
+
     updateUI() {
+        document.getElementById('obj-counter').innerText = this.objects.length;
         if(this.selectedId >= 0 && this.selectedId < this.objects.length) {
             let o = this.objects[this.selectedId];
-            document.getElementById('obj-rot-x').value = o.rot[0] * 180/Math.PI; document.getElementById('obj-rot-y').value = o.rot[1] * 180/Math.PI; document.getElementById('obj-rot-z').value = o.rot[2] * 180/Math.PI;
-            document.getElementById('mat-type').value = o.matType; document.getElementById('mat-color').value = this.rgbToHex(o.color[0], o.color[1], o.color[2]); document.getElementById('mat-re').value = o.prop;
+            document.getElementById('sel-info').innerText = "Selected: ID " + this.selectedId + (o.type===0?" (Cube)":" (Sphere)");
+            document.getElementById('obj-pos-x').value = o.pos[0]; document.getElementById('obj-pos-y').value = o.pos[1]; document.getElementById('obj-pos-z').value = o.pos[2];
+            document.getElementById('mat-type').value = o.matType; document.getElementById('mat-color').value = this.rgbToHex(o.color[0], o.color[1], o.color[2]);
+            document.getElementById('mat-re').value = o.prop; document.getElementById('obj-scale').value = o.scale[0];
+        } else document.getElementById('sel-info').innerText = "Selected: None";
+    }
+
+    updateGizmoOverlay() {
+        const g=document.getElementById('transform-gizmo');
+        if(!g) return;
+        if(this.xrSession || !this.vrSettings.gizmosVisible || this.selectedId<0 || !this.objects[this.selectedId]) {
+            g.style.display='none'; return;
         }
+        const o=this.objects[this.selectedId], rel=[o.pos[0]-this.camera.pos[0],o.pos[1]-this.camera.pos[1],o.pos[2]-this.camera.pos[2]];
+        const z=rel[0]*this.camera.forward[0]+rel[1]*this.camera.forward[1]+rel[2]*this.camera.forward[2];
+        if(z<=0.05) { g.style.display='none'; return; }
+        const x=rel[0]*this.camera.right[0]+rel[1]*this.camera.right[1]+rel[2]*this.camera.right[2];
+        const y=rel[0]*this.camera.up[0]+rel[1]*this.camera.up[1]+rel[2]*this.camera.up[2];
+        const scale=Math.tan((this.camera.fov/2)*Math.PI/180);
+        const px=this.canvas.width*0.5 + (x/(z*scale))*this.canvas.width*0.5;
+        const py=this.canvas.height*0.5 - (y/(z*scale))*this.canvas.width*0.5;
+        g.style.left=px+'px'; g.style.top=py+'px'; g.style.display='block';
     }
 
     updateEnv() {
         this.env.time = parseFloat(document.getElementById('time-day').value);
-        let userSunHex = document.getElementById('floor-color').value; // Just arbitrary re-use to keep demo simple
+        let userSunHex = document.getElementById('sun-color').value;
+        let baseSunColor = this.hexToRgb(userSunHex);
+        
         let t = (this.env.time / 24.0) * Math.PI * 2.0 - Math.PI/2;
-        this.env.sunDir = [Math.cos(t), Math.sin(t), 0.3]; let sunH = Math.max(0, this.env.sunDir[1]);
+        this.env.sunDir = [Math.cos(t), Math.sin(t), 0.3]; 
+        let sunH = Math.max(0, this.env.sunDir[1]);
+        
         if(sunH > 0.15) { 
-            let f = Math.min(1.0, (sunH - 0.15)/0.5 + 0.2);
-            this.env.skyColor = [0.2*f, 0.5*f, 0.9*f]; this.env.horizonColor = [0.8*f, 0.9*f, 1.0*f]; this.env.sunColor = [f*1.8, f*1.8, f*1.7]; 
-        } else { this.env.skyColor = [0.0005, 0.0008, 0.002]; this.env.horizonColor = [0.001, 0.001, 0.003]; this.env.sunColor = [0,0,0]; }
+            let factor = Math.min(1.0, (sunH - 0.15) / 0.5 + 0.2);
+            this.env.skyColor = [0.2 * factor, 0.5 * factor, 0.9 * factor]; 
+            this.env.horizonColor = [0.8 * factor, 0.9 * factor, 1.0 * factor]; 
+            this.env.sunColor = baseSunColor.map(c => c * factor * 1.8); 
+        } 
+        else if(sunH > 0.0) { 
+            let factor = sunH / 0.15;
+            this.env.skyColor = [0.4 * factor, 0.15 * factor, 0.25 * factor]; 
+            this.env.horizonColor = [0.8 * factor, 0.4 * factor, 0.1 * factor]; 
+            this.env.sunColor = [baseSunColor[0] * factor * 1.5, baseSunColor[1] * factor * 0.5, baseSunColor[2] * factor * 0.2]; 
+        } 
+        else { 
+            this.env.skyColor = [0.0005, 0.0008, 0.002]; 
+            this.env.horizonColor = [0.001, 0.001, 0.003]; 
+            this.env.sunColor = [0.0, 0.0, 0.0]; 
+        }
+        
         this.env.floorColor = this.hexToRgb(document.getElementById('floor-color').value);
-        this.accumFrame = 0;
+        this.accumFrame = 0; this.prevAccumFrame = 0;
     }
-    resetAccum() { this.bounces = parseInt(document.getElementById('bounces').value); this.accumFrame = 0; }
-    updateCameras() { this.camera.fov = parseFloat(document.getElementById('n-cam-fov').value); this.accumFrame = 0; }
+
+    resetAccum() { this.bounces = parseInt(document.getElementById('bounces').value); this.accumFrame = 0; this.prevAccumFrame = 0; }
 
     generateDemo() {
-        this.objects.push({ pos: [0, 1.2, 0], type: 1, scale:[1.2,1.2,1.2], rot:[0,0,0], matType:1, color:[1,1,1], prop:0.0, ior:1.0 });
-        this.objects.push({ pos: [2.5, 1, 1], type: 1, scale:[1,1,1], rot:[0,0,0], matType:2, color:[1,1,1], prop:0, ior:1.5 });
-        this.objects.push({ pos: [-2.5, 1, 1], type: 0, scale:[1,1,1], rot:[Math.PI/4, Math.PI/4, 0], matType:0, color:[0.8,0.2,0.2], prop:0.2, ior:1.0 });
+        this.objects.push({ pos: [0, 1.2, 0], type: 1, scale:[1.2,1.2,1.2], rotation:[0,0,0], matType:1, color:[1,1,1], prop:0.0, ior:1.0 });
+        this.objects.push({ pos: [2.5, 1, 1], type: 1, scale:[1,1,1], rotation:[0,0,0], matType:2, color:[1,1,1], prop:0, ior:1.5 });
+        this.objects.push({ pos: [-2.5, 1, 1], type: 0, scale:[1,1,1], rotation:[0,0,0], matType:3, color:[0.2,0.8,1.0], prop:1.0, ior:1.0 });
         this.updateUI();
     }
 
-    // WEBXR & VR IMPLEMENTATION
-    async enterVR() {
-        if (!navigator.xr) { alert("WebXR not supported."); return; }
-        if (!await navigator.xr.isSessionSupported('immersive-vr')) { alert("VR HMD not connected."); return; }
-        try {
-            this.xrSession = await navigator.xr.requestSession('immersive-vr');
-            this.xrSession.addEventListener('end', () => this.exitVR());
-            await this.gl.makeXRCompatible();
-            const glLayer = new XRWebGLLayer(this.xrSession, this.gl);
-            this.xrSession.updateRenderState({ baseLayer: glLayer });
-            this.xrRefSpace = await this.xrSession.requestReferenceSpace('local');
-            this.inVR = true; this.accumFrame = 0;
-            document.getElementById('modal-vr').style.display = 'none';
-            this.xrSession.requestAnimationFrame(this.onXRFrame.bind(this));
-        } catch(e) { console.error(e); alert("Failed to start VR."); }
-    }
-    exitVR() { if(this.xrSession) { this.xrSession.end(); this.xrSession = null; } this.inVR = false; this.resize(); this.lastTime = performance.now(); requestAnimationFrame(this.render.bind(this)); }
+    updateCameras() {
+        this.camera.fov = parseFloat(document.getElementById('n-cam-fov').value);
+        this.camera.visible = document.getElementById('n-cam-vis').checked;
+        this.camera.colorHex = document.getElementById('n-cam-color').value;
 
-    checkGrabAABB(hPos, obj) {
-        let hr = 0.1 * parseFloat(document.getElementById('vr-scale').value);
-        if(obj.type === 1) return Math.hypot(hPos[0]-obj.pos[0], hPos[1]-obj.pos[1], hPos[2]-obj.pos[2]) < (hr + obj.scale[0]);
-        let dx = Math.abs(hPos[0] - obj.pos[0]) - obj.scale[0]; let dy = Math.abs(hPos[1] - obj.pos[1]) - obj.scale[1]; let dz = Math.abs(hPos[2] - obj.pos[2]) - obj.scale[2];
-        return Math.sqrt(Math.max(dx,0)**2 + Math.max(dy,0)**2 + Math.max(dz,0)**2) < hr;
-    }
-
-    handleVRInputs(session, frame, ws) {
-        let useThumbsticks = document.getElementById('vr-thumbsticks').checked;
-        for (let i = 0; i < session.inputSources.length; i++) {
-            let source = session.inputSources[i]; if (!source.gamepad || !source.gripSpace) continue;
-            let pose = frame.getPose(source.gripSpace, this.xrRefSpace);
-            if(pose) {
-                let p = pose.transform.position, q = pose.transform.orientation;
-                let handPos = [this.camera.pos[0] + p.x*ws, this.camera.pos[1] + p.y*ws, this.camera.pos[2] + p.z*ws];
-                let handQuat = [q.x, q.y, q.z, q.w];
-                let idx = source.handedness === 'right' ? 2 : 1;
-                
-                // Update Avatar logic
-                this.vrAvatars[idx].pos = handPos;
-                this.vrAvatars[idx].rot = quatToEuler(handQuat);
-
-                if(source.gamepad.buttons[4]?.pressed && idx === 2) this.exitVR();
-
-                // Rotate and Grab
-                let grip = source.gamepad.buttons[1]?.pressed;
-                if(grip && this.vrGrabbedObj[idx-1] === -1) {
-                    for(let o=0; o<this.objects.length; o++) {
-                        if(this.checkGrabAABB(handPos, this.objects[o])) {
-                            this.vrGrabbedObj[idx-1] = o;
-                            let oObj = this.objects[o];
-                            let invHand = quatInvert(handQuat);
-                            this.vrGrabOffset[idx-1] = {
-                                pos: vecRotateQuat([oObj.pos[0]-handPos[0], oObj.pos[1]-handPos[1], oObj.pos[2]-handPos[2]], invHand),
-                                quat: quatMult(invHand, eulerToQuat(oObj.rot))
-                            };
-                            break;
-                        }
-                    }
-                } else if(!grip) { this.vrGrabbedObj[idx-1] = -1; }
-
-                if(this.vrGrabbedObj[idx-1] >= 0) {
-                    let o = this.objects[this.vrGrabbedObj[idx-1]]; let offset = this.vrGrabOffset[idx-1];
-                    let worldRelPos = vecRotateQuat(offset.pos, handQuat);
-                    o.pos = [handPos[0]+worldRelPos[0], handPos[1]+worldRelPos[1], handPos[2]+worldRelPos[2]];
-                    o.rot = quatToEuler(quatMult(handQuat, offset.quat));
-                    this.accumFrameVR[0] = 0; this.accumFrameVR[1] = 0; // reset accum
-                }
-
-                // Locomotion
-                if(!useThumbsticks && source.gamepad.buttons[0]?.pressed) {
-                    this.camera.pos[0] -= handPos[0] - this.vrPrevHandPos[idx-1][0];
-                    this.camera.pos[1] -= handPos[1] - this.vrPrevHandPos[idx-1][1];
-                    this.camera.pos[2] -= handPos[2] - this.vrPrevHandPos[idx-1][2];
-                    this.accumFrameVR[0] = 0; this.accumFrameVR[1] = 0;
-                } else if (useThumbsticks) {
-                    let axX = source.gamepad.axes[2], axY = source.gamepad.axes[3];
-                    if(Math.abs(axY)>0.1 || Math.abs(axX)>0.1) {
-                        this.camera.pos[0] += (this.camera.forward[0] * -axY + this.camera.right[0] * axX) * 0.05 * ws;
-                        this.camera.pos[1] += (this.camera.forward[1] * -axY + this.camera.right[1] * axX) * 0.05 * ws;
-                        this.camera.pos[2] += (this.camera.forward[2] * -axY + this.camera.right[2] * axX) * 0.05 * ws;
-                        this.accumFrameVR[0] = 0; this.accumFrameVR[1] = 0;
-                    }
-                }
-                this.vrPrevHandPos[idx-1] = [...handPos];
-            }
+        if(this.renderCamera) {
+            this.renderCamera.fov = parseFloat(document.getElementById('r-cam-fov').value);
+            this.renderCamera.visible = document.getElementById('r-cam-vis').checked;
+            this.renderCamera.colorHex = document.getElementById('r-cam-color').value;
         }
+        this.accumFrame = 0; this.prevAccumFrame = 0;
     }
 
-    onXRFrame(time, frame) {
-        if (!this.inVR || !this.xrSession) return;
-        this.xrSession.requestAnimationFrame(this.onXRFrame.bind(this));
-        let ws = parseFloat(document.getElementById('vr-scale').value);
-        this.handleVRInputs(this.xrSession, frame, ws);
+    spawnRenderCamera() {
+        this.renderCamera = new Camera();
+        this.renderCamera.pos = [...this.camera.pos];
+        this.renderCamera.yaw = this.camera.yaw; this.renderCamera.pitch = this.camera.pitch;
+        this.renderCamera.fov = this.camera.fov;
+        this.renderCamera.updateVectors();
+        document.getElementById('render-cam-settings').style.display = 'block';
+        this.updateCameras();
+    }
 
-        const pose = frame.getViewerPose(this.xrRefSpace);
-        if (pose) {
-            const glLayer = this.xrSession.renderState.baseLayer;
-            const gl = this.gl;
-            
-            let eyeIdx = 0;
-            for (const view of pose.views) {
-                const viewport = glLayer.getViewport(view);
-                if (!this.texPT_VR[eyeIdx] || this.vrW !== viewport.width) {
-                    this.initVRFBOs(viewport.width, viewport.height); this.vrW = viewport.width; this.vrH = viewport.height;
-                }
-                
-                let mat = view.transform.matrix;
-                let vPos = [this.camera.pos[0] + mat[12]*ws, this.camera.pos[1] + mat[13]*ws, this.camera.pos[2] + mat[14]*ws];
-                
-                // Head Avatar update (Using left eye pos for simplicity)
-                if (eyeIdx === 0) {
-                    this.vrAvatars[0].pos = vPos;
-                    let q = pose.transform.orientation; this.vrAvatars[0].rot = quatToEuler([q.x, q.y, q.z, q.w]);
-                }
-                
-                let vRight = [mat[0], mat[1], mat[2]]; let vUp = [mat[4], mat[5], mat[6]]; let vFwd = [-mat[8], -mat[9], -mat[10]];
-                let fovScale = 1.0 / view.projectionMatrix[5];
+    relocateRenderCamera() {
+        if(!this.renderCamera) return;
+        this.renderCamera.pos = [...this.camera.pos];
+        this.renderCamera.yaw = this.camera.yaw; this.renderCamera.pitch = this.camera.pitch;
+        this.renderCamera.updateVectors();
+        this.accumFrame = 0; this.prevAccumFrame = 0;
+    }
 
-                if(Math.hypot(vPos[0]-this.lastVRPos[eyeIdx][0], vPos[1]-this.lastVRPos[eyeIdx][1], vPos[2]-this.lastVRPos[eyeIdx][2]) > 0.005 || 
-                   Math.hypot(vFwd[0]-this.lastVRFwd[eyeIdx][0], vFwd[1]-this.lastVRFwd[eyeIdx][1], vFwd[2]-this.lastVRFwd[eyeIdx][2]) > 0.005) {
-                    this.accumFrameVR[eyeIdx] = 0; this.lastVRPos[eyeIdx] = [...vPos]; this.lastVRFwd[eyeIdx] = [...vFwd];
-                }
-
-                this.executePathTrace(this.fboPT_VR[eyeIdx], this.fboAccVR[eyeIdx][1 - this.pingpongVR[eyeIdx]], this.texPT_VR[eyeIdx], 
-                                      this.texAccVR[eyeIdx][1 - this.pingpongVR[eyeIdx]], this.texAccVR[eyeIdx][this.pingpongVR[eyeIdx]], 
-                                      viewport.width, viewport.height, this.accumFrameVR[eyeIdx], vPos, vFwd, vRight, vUp, fovScale, ws, true);
-                
-                this.pingpongVR[eyeIdx] = 1 - this.pingpongVR[eyeIdx];
-                this.accumFrameVR[eyeIdx]++;
-
-                // Blit to Headset
-                gl.bindFramebuffer(gl.FRAMEBUFFER, glLayer.framebuffer);
-                gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
-                gl.useProgram(this.dispProgram);
-                gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, this.texAccVR[eyeIdx][1 - this.pingpongVR[eyeIdx]]);
-                gl.uniform1i(gl.getUniformLocation(this.dispProgram, 'u_texture'), 0);
-                gl.bindBuffer(gl.ARRAY_BUFFER, this.quadVBO);
-                let aPos = gl.getAttribLocation(this.dispProgram, 'a_position'); gl.enableVertexAttribArray(aPos); gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
-                gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-
-                eyeIdx++;
-            }
+    startFinalRender() {
+        let maxTex = this.gl.getParameter(this.gl.MAX_TEXTURE_SIZE);
+        let res = document.getElementById('render-res').value.split('x');
+        this.renderWidth = parseInt(res[0]); this.renderHeight = parseInt(res[1]);
+        if(this.renderWidth > maxTex || this.renderHeight > maxTex) {
+            alert(`Your GPU max texture size is ${maxTex}px. 8K unsupported.`); return;
         }
-    }
-
-    executePathTrace(fboPT, fboAcc, texPT, texAccCurrent, texAccHist, w, h, frameAccum, cPos = this.camera.pos, cFwd = this.camera.forward, cRight = this.camera.right, cUp = this.camera.up, cFov = null, worldScale = 1.0, isVR = false) {
-        const gl = this.gl;
-        gl.useProgram(this.ptProgram);
-        gl.bindFramebuffer(gl.FRAMEBUFFER, fboPT); gl.viewport(0, 0, w, h);
         
-        gl.uniform2f(gl.getUniformLocation(this.ptProgram, 'u_resolution'), w, h);
+        this.isFinalRendering = true;
+        this.renderSamples = 0;
+        this.targetSamples = parseInt(document.getElementById('render-samples').value);
+        this.renderFormat = document.getElementById('render-format').value;
+        this.renderStartTime = performance.now();
+
+        this.createTarget(this.texPT, this.renderWidth, this.renderHeight);
+        this.createTarget(this.texAcc[0], this.renderWidth, this.renderHeight);
+        this.createTarget(this.texAcc[1], this.renderWidth, this.renderHeight);
+        
+        const gl = this.gl;
+        this.texFinal = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, this.texFinal);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this.renderWidth, this.renderHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+        this.fboFinal = gl.createFramebuffer();
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.fboFinal);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.texFinal, 0);
+
+        this.accumFrame = 0;
+        document.getElementById('render-overlay').style.display = 'flex';
+    }
+
+    finishFinalRender() {
+        const gl = this.gl;
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.fboFinal);
+        const pixels = new Uint8Array(this.renderWidth * this.renderHeight * 4);
+        gl.readPixels(0, 0, this.renderWidth, this.renderHeight, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+        
+        const cvs = document.createElement('canvas'); cvs.width = this.renderWidth; cvs.height = this.renderHeight;
+        const ctx = cvs.getContext('2d'); const imgData = ctx.createImageData(this.renderWidth, this.renderHeight);
+        
+        for(let y=0; y<this.renderHeight; y++) {
+            let invY = (this.renderHeight - 1 - y);
+            let src = y * this.renderWidth * 4; let dst = invY * this.renderWidth * 4;
+            imgData.data.set(pixels.subarray(src, src + this.renderWidth*4), dst);
+        }
+        ctx.putImageData(imgData, 0, 0);
+        
+        let mime = this.renderFormat === 'jpg' ? 'image/jpeg' : (this.renderFormat === 'bmp' ? 'image/bmp' : 'image/png');
+        let a = document.createElement('a');
+        a.href = cvs.toDataURL(mime, 0.98);
+        a.download = `Render_${this.renderWidth}x${this.renderHeight}.${this.renderFormat}`;
+        a.click();
+
+        this.isFinalRendering = false;
+        document.getElementById('render-overlay').style.display = 'none';
+        
+        gl.deleteTexture(this.texFinal); gl.deleteFramebuffer(this.fboFinal);
+        this.resize(); 
+    }
+
+    executePathTrace(fboPT, fboAcc, texPT, texAccCurrent, texAccHist, width, height, activeCamId, frameAccum, cameraOverride=null, fovOverride=null, viewportX=0, viewportY=0, targetFramebuffer=null) {
+        const gl = this.gl;
+        
+        gl.useProgram(this.ptProgram);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, targetFramebuffer || fboPT);
+        gl.viewport(viewportX, viewportY, width, height);
+        
+        gl.uniform2f(gl.getUniformLocation(this.ptProgram, 'u_resolution'), width, height);
         gl.uniform1f(gl.getUniformLocation(this.ptProgram, 'u_time'), performance.now() * 0.001);
         gl.uniform1i(gl.getUniformLocation(this.ptProgram, 'u_frame'), frameAccum);
         gl.uniform1i(gl.getUniformLocation(this.ptProgram, 'u_bounces'), this.bounces);
-        gl.uniform1f(gl.getUniformLocation(this.ptProgram, 'u_worldScale'), worldScale);
-        gl.uniform1i(gl.getUniformLocation(this.ptProgram, 'u_inVR'), isVR ? 1 : 0);
+        gl.uniform1i(gl.getUniformLocation(this.ptProgram, 'u_activeCam'), activeCamId);
+        gl.uniform1i(gl.getUniformLocation(this.ptProgram, 'u_showOutlines'), this.showOutlines ? 1 : 0);
+        gl.uniform1f(gl.getUniformLocation(this.ptProgram, 'u_fogDensity'), this.fogDensity);
 
-        let fovS = cFov !== null ? cFov : Math.tan((this.camera.fov/2) * Math.PI / 180);
-        gl.uniform3fv(gl.getUniformLocation(this.ptProgram, 'u_cam.pos'), cPos);
-        gl.uniform3fv(gl.getUniformLocation(this.ptProgram, 'u_cam.fwd'), cFwd);
-        gl.uniform3fv(gl.getUniformLocation(this.ptProgram, 'u_cam.right'), cRight);
-        gl.uniform3fv(gl.getUniformLocation(this.ptProgram, 'u_cam.up'), cUp);
-        gl.uniform1f(gl.getUniformLocation(this.ptProgram, 'u_cam.fovScale'), fovS);
-
-        // Upload VR Avatars & Menu Texture
-        for(let i=0; i<3; i++) {
-            gl.uniform3fv(gl.getUniformLocation(this.ptProgram, `u_vr[${i}].pos`), this.vrAvatars[i].pos);
-            gl.uniform3fv(gl.getUniformLocation(this.ptProgram, `u_vr[${i}].rot`), this.vrAvatars[i].rot);
-            gl.uniform3fv(gl.getUniformLocation(this.ptProgram, `u_vr[${i}].scale`), this.vrAvatars[i].scale.map(s => s * worldScale));
+        for(let i=0; i<2; i++) {
+            let c = (cameraOverride && i===0) ? cameraOverride : ((i===0) ? this.camera : (this.renderCamera ? this.renderCamera : this.camera));
+            let vis = (i===1 && !this.renderCamera) ? 0.0 : (c.visible ? 1.0 : 0.0);
+            gl.uniform3fv(gl.getUniformLocation(this.ptProgram, `u_cams[${i}].pos`), c.pos);
+            gl.uniform3fv(gl.getUniformLocation(this.ptProgram, `u_cams[${i}].fwd`), c.forward);
+            gl.uniform3fv(gl.getUniformLocation(this.ptProgram, `u_cams[${i}].right`), c.right);
+            gl.uniform3fv(gl.getUniformLocation(this.ptProgram, `u_cams[${i}].up`), c.up);
+            gl.uniform3fv(gl.getUniformLocation(this.ptProgram, `u_cams[${i}].color`), c.getColorRgb());
+            gl.uniform1f(gl.getUniformLocation(this.ptProgram, `u_cams[${i}].fovScale`), (cameraOverride && i===0 && fovOverride) ? fovOverride : Math.tan((c.fov/2) * Math.PI / 180));
+            gl.uniform1f(gl.getUniformLocation(this.ptProgram, `u_cams[${i}].visible`), vis);
         }
-        gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, this.texVRMenu);
-        gl.uniform1i(gl.getUniformLocation(this.ptProgram, 'u_menuTex'), 2);
 
         gl.uniform3fv(gl.getUniformLocation(this.ptProgram, 'u_sunDir'), this.env.sunDir);
         gl.uniform3fv(gl.getUniformLocation(this.ptProgram, 'u_sunColor'), this.env.sunColor);
@@ -813,76 +1288,138 @@ class RayEngine {
         gl.uniform3fv(gl.getUniformLocation(this.ptProgram, 'u_horizonColor'), this.env.horizonColor);
         gl.uniform3fv(gl.getUniformLocation(this.ptProgram, 'u_floorColor'), this.env.floorColor);
         gl.uniform1i(gl.getUniformLocation(this.ptProgram, 'u_objCount'), this.objects.length);
+        gl.uniform1i(gl.getUniformLocation(this.ptProgram, 'u_selectedObj'), this.selectedId);
 
         for(let i=0; i<this.objects.length; i++) {
             let o = this.objects[i];
             gl.uniform4f(gl.getUniformLocation(this.ptProgram, `u_objects[${i}].pos_type`), o.pos[0], o.pos[1], o.pos[2], o.type);
             gl.uniform4f(gl.getUniformLocation(this.ptProgram, `u_objects[${i}].scale_mat`), o.scale[0], o.scale[1], o.scale[2], o.matType);
             gl.uniform4f(gl.getUniformLocation(this.ptProgram, `u_objects[${i}].color_props`), o.color[0], o.color[1], o.color[2], o.prop);
-            gl.uniform4f(gl.getUniformLocation(this.ptProgram, `u_objects[${i}].rot_ior`), o.rot[0], o.rot[1], o.rot[2], o.ior);
+            gl.uniform4f(gl.getUniformLocation(this.ptProgram, `u_objects[${i}].extra`), 0,0,0, o.ior);
+            const r = o.rotation || [0,0,0];
+            gl.uniform4f(gl.getUniformLocation(this.ptProgram, `u_objects[${i}].rotation`), r[0],r[1],r[2],0);
         }
 
-        if(this.selectedId >= 0 && !isVR) {
-            this.updateGizmoTransforms(); gl.uniform1i(gl.getUniformLocation(this.ptProgram, 'u_showGizmos'), 1);
-            for(let i=0; i<6; i++) {
-                let g = this.gizmos[i];
-                gl.uniform4f(gl.getUniformLocation(this.ptProgram, `u_gizmos[${i}].pos_type`), g.pos[0], g.pos[1], g.pos[2], g.type);
-                gl.uniform4f(gl.getUniformLocation(this.ptProgram, `u_gizmos[${i}].scale_mat`), g.scale[0], g.scale[1], g.scale[2], g.matType);
-                gl.uniform4f(gl.getUniformLocation(this.ptProgram, `u_gizmos[${i}].color_props`), g.color[0], g.color[1], g.color[2], g.prop);
-                gl.uniform4f(gl.getUniformLocation(this.ptProgram, `u_gizmos[${i}].rot_ior`), g.rot[0], g.rot[1], g.rot[2], 1.0);
-            }
-        } else { gl.uniform1i(gl.getUniformLocation(this.ptProgram, 'u_showGizmos'), 0); }
+        gl.uniform1i(gl.getUniformLocation(this.ptProgram, 'u_vrHandsEnabled'), this.xrSession ? 1 : 0);
+        gl.uniform1i(gl.getUniformLocation(this.ptProgram, 'u_vrAvatarVisible'), this.vrSettings.avatarVisible ? 1 : 0);
+        for(let h=0; h<2; h++) {
+            const hp=this.xrHands[h] || [0,-100,0];
+            gl.uniform4f(gl.getUniformLocation(this.ptProgram, `u_vrHands[${h}]`), hp[0],hp[1],hp[2],0.09);
+        }
 
         gl.bindBuffer(gl.ARRAY_BUFFER, this.quadVBO);
-        let aPos1 = gl.getAttribLocation(this.ptProgram, 'a_position'); gl.enableVertexAttribArray(aPos1); gl.vertexAttribPointer(aPos1, 2, gl.FLOAT, false, 0, 0);
+        const aPos1 = gl.getAttribLocation(this.ptProgram, 'a_position');
+        gl.enableVertexAttribArray(aPos1); gl.vertexAttribPointer(aPos1, 2, gl.FLOAT, false, 0, 0);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
-        // Accumulate
+        if(cameraOverride) return;
         gl.useProgram(this.accProgram);
         gl.bindFramebuffer(gl.FRAMEBUFFER, fboAcc);
-        gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, texPT); gl.uniform1i(gl.getUniformLocation(this.accProgram, 'u_current'), 0);
-        gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, texAccHist); gl.uniform1i(gl.getUniformLocation(this.accProgram, 'u_history'), 1);
+        
+        gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, texPT);
+        gl.uniform1i(gl.getUniformLocation(this.accProgram, 'u_current'), 0);
+        
+        gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, texAccHist);
+        gl.uniform1i(gl.getUniformLocation(this.accProgram, 'u_history'), 1);
+        
         gl.uniform1f(gl.getUniformLocation(this.accProgram, 'u_weight'), 1.0 / (frameAccum + 1));
-        let aPos2 = gl.getAttribLocation(this.accProgram, 'a_position'); gl.enableVertexAttribArray(aPos2); gl.vertexAttribPointer(aPos2, 2, gl.FLOAT, false, 0, 0);
+        
+        const aPos2 = gl.getAttribLocation(this.accProgram, 'a_position');
+        gl.enableVertexAttribArray(aPos2); gl.vertexAttribPointer(aPos2, 2, gl.FLOAT, false, 0, 0);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     }
 
-    displayToViewport(tex, w, h) {
-        const gl = this.gl; gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.viewport(0, 0, w, h);
-        gl.useProgram(this.dispProgram); gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, tex);
+    displayToViewport(fbo, tex, vx, vy, vw, vh) {
+        const gl = this.gl;
+        gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+        gl.viewport(vx, vy, vw, vh);
+        gl.useProgram(this.dispProgram);
+        gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, tex);
         gl.uniform1i(gl.getUniformLocation(this.dispProgram, 'u_texture'), 0);
-        let aPos = gl.getAttribLocation(this.dispProgram, 'a_position'); gl.enableVertexAttribArray(aPos); gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+        
+        const aPos3 = gl.getAttribLocation(this.dispProgram, 'a_position');
+        gl.enableVertexAttribArray(aPos3); gl.vertexAttribPointer(aPos3, 2, gl.FLOAT, false, 0, 0);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     }
 
     render(now) {
         requestAnimationFrame(this.render.bind(this));
-        
-        // Spectator Mode Check
-        let specMode = parseInt(document.getElementById('spectator-mode').value);
-        if (this.inVR) {
-            if(specMode === 1 && this.texAccVR[0][1 - this.pingpongVR[0]]) {
-                this.displayToViewport(this.texAccVR[0][1 - this.pingpongVR[0]], this.canvas.width, this.canvas.height);
+        if(this.xrSession) return;
+
+        if (!this.isFinalRendering && this.targetFps > 0) {
+            let elapsed = now - this.lastFrameTime;
+            if (elapsed < this.fpsInterval) {
+                return;
             }
-            return; 
+            this.lastFrameTime = now - (elapsed % this.fpsInterval);
+        } else {
+            this.lastFrameTime = now;
         }
 
         let dt = (now - this.lastTime) / 1000.0; this.lastTime = now;
-        document.getElementById('fps-counter').innerText = Math.round(1/dt);
-        document.getElementById('accum-counter').innerText = this.accumFrame;
+        
+        if(!this.isFinalRendering) {
+            document.getElementById('fps-counter').innerText = Math.round(1/dt);
+            document.getElementById('ms-counter').innerText = (dt*1000).toFixed(1);
+            document.getElementById('accum-counter').innerText = this.accumFrame;
+        }
 
         this.camera.update(dt);
-        if(this.camera.dirty) { this.camera.updateVectors(); this.accumFrame = 0; this.camera.dirty = false; }
-
-        if(this.accumFrame < 10000) {
-            this.executePathTrace(this.fboPT, this.fboAcc[1 - this.pingpong], this.texPT, this.texAcc[1 - this.pingpong], this.texAcc[this.pingpong], this.width, this.height, this.accumFrame);
-            this.pingpong = 1 - this.pingpong; this.accumFrame++;
+        if(this.camera.dirty) {
+            this.camera.updateVectors();
+            this.accumFrame = 0; this.prevAccumFrame = 0;
+            this.camera.dirty = false;
         }
-        this.displayToViewport(this.texAcc[this.pingpong], this.canvas.width, this.canvas.height);
+
+        const gl = this.gl;
+        this.updateGizmoOverlay();
+
+        if(this.isFinalRendering) {
+            let camId = this.renderCamera ? 1 : 0;
+            this.executePathTrace(this.fboPT, this.fboAcc[1 - this.pingpong], this.texPT, this.texAcc[1 - this.pingpong], this.texAcc[this.pingpong], this.renderWidth, this.renderHeight, camId, this.accumFrame);
+            
+            this.displayToViewport(this.fboFinal, this.texAcc[1 - this.pingpong], 0, 0, this.renderWidth, this.renderHeight);
+            this.displayToViewport(null, this.texAcc[1 - this.pingpong], 0, 0, this.canvas.width, this.canvas.height);
+
+            this.pingpong = 1 - this.pingpong;
+            this.accumFrame++;
+
+            let elapsedRender = now - this.renderStartTime;
+            let msPerFrame = elapsedRender / this.accumFrame;
+            let remaining = this.targetSamples - this.accumFrame;
+            let etaMs = remaining * msPerFrame;
+            let mins = Math.floor(etaMs / 60000); let secs = Math.floor((etaMs % 60000) / 1000);
+            
+            document.getElementById('render-status').innerText = `Sample ${this.accumFrame} / ${this.targetSamples}`;
+            document.getElementById('render-fill').style.width = `${(this.accumFrame/this.targetSamples)*100}%`;
+            document.getElementById('render-eta').innerText = `ETA: ${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+
+            if(this.accumFrame >= this.targetSamples) this.finishFinalRender();
+
+        } else {
+            if(this.renderCamera && this.prevAccumFrame < 10000) {
+                this.executePathTrace(this.prevFboPT, this.prevFboAcc[1 - this.prevPingpong], this.prevTexPT, this.prevTexAcc[1 - this.prevPingpong], this.prevTexAcc[this.prevPingpong], this.prevW, this.prevH, 1, this.prevAccumFrame);
+                this.prevPingpong = 1 - this.prevPingpong;
+                this.prevAccumFrame++;
+            }
+
+            if(this.accumFrame < 10000) {
+                this.executePathTrace(this.fboPT, this.fboAcc[1 - this.pingpong], this.texPT, this.texAcc[1 - this.pingpong], this.texAcc[this.pingpong], this.width, this.height, 0, this.accumFrame);
+                this.pingpong = 1 - this.pingpong;
+                this.accumFrame++;
+            }
+            
+            this.displayToViewport(null, this.texAcc[this.pingpong], 0, 0, this.canvas.width, this.canvas.height);
+
+            if(this.renderCamera) {
+                this.displayToViewport(null, this.prevTexAcc[this.prevPingpong], 20, 20, this.prevW, this.prevH);
+            }
+        }
     }
 }
 
 const app = new RayEngine();
 </script>
+
 </body>
 </html>
